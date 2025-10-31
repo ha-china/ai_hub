@@ -1,0 +1,247 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "连接到AI Hub",
+        "description": "输入您的智谱AI API密钥（必需）和硅基流动API密钥（可选，用于语音识别功能）。智谱AI密钥可以在[这里]({api_key_url})获取，硅基流动密钥请在硅基流动官网获取。",
+        "data": {
+          "api_key": "智谱AI API密钥",
+          "siliconflow_api_key": "硅基流动API密钥（可选，用于语音识别）"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "无法连接到AI Hub服务，请检查网络连接",
+      "invalid_auth": "API密钥无效，请检查后重试",
+      "unknown": "未知错误，请稍后重试"
+    },
+    "abort": {
+      "already_configured": "此API密钥已配置"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "配置选项",
+        "description": "请在集成详情页面中找到对应的子条目（对话助手或AI任务），点击子条目右侧的配置按钮来修改设置。\n\n在集成页面点击「AI Hub」，进入详情页后，您会看到已配置的子条目列表，每个子条目都可以单独配置。"
+      }
+    },
+    "abort": {
+      "configure_via_subentries": "请通过子条目配置对话助手和AI任务。在设备页面中找到对应的子条目进行配置。"
+    }
+  },
+  "config_subentries": {
+    "conversation": {
+      "initiate_flow": {
+        "user": "添加对话助手",
+        "reconfigure": "重新配置对话助手"
+      },
+      "entry_type": "AI Hub对话助手",
+      "step": {
+        "init": {
+          "title": "配置对话助手",
+          "description": "自定义对话助手的行为和参数。开启推荐模式将使用最佳配置，关闭后可自定义所有参数。点击提交后，切换配置信息。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "prompt": "提示词模板",
+            "chat_model": "聊天模型",
+            "temperature": "温度（创造性）",
+            "top_p": "Top P（采样）",
+            "top_k": "Top K",
+            "max_tokens": "最大令牌数",
+            "max_history_messages": "最大历史消息数",
+            "web_search": "启用联网搜索"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "prompt": "自定义系统提示词，可使用模板",
+            "temperature": "控制回复的创造性，0=严谨，2=发散",
+            "top_p": "控制词汇多样性，较低值更保守",
+            "max_tokens": "单次回复的最大长度",
+            "max_history_messages": "保留的对话历史数量",
+            "web_search": "允许AI搜索互联网获取最新信息"
+          }
+        }
+      }
+    },
+    "ai_task_data": {
+      "initiate_flow": {
+        "user": "添加AI任务",
+        "reconfigure": "重新配置AI任务"
+      },
+      "entry_type": "AI Hub任务",
+      "step": {
+        "init": {
+          "title": "配置AI任务",
+          "description": "自定义AI任务的行为和参数。开启推荐模式将使用最佳配置，关闭后可自定义所有参数。点击提交后，切换配置信息。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "chat_model": "聊天模型",
+            "image_model": "图像生成模型",
+            "temperature": "温度（创造性）",
+            "top_p": "Top P（采样）",
+            "max_tokens": "最大令牌数"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "temperature": "控制回复的创造性，0=严谨，2=发散",
+            "top_p": "控制词汇多样性，较低值更保守",
+            "max_tokens": "单次回复的最大长度"
+          }
+        }
+      }
+    },
+    "tts": {
+      "initiate_flow": {
+        "user": "添加Edge TTS语音",
+        "reconfigure": "重新配置Edge TTS语音"
+      },
+      "entry_type": "AI Hub Edge TTS语音",
+      "step": {
+        "init": {
+          "title": "配置Edge TTS语音",
+          "description": "自定义Edge TTS文本转语音的参数。Edge TTS是微软提供的免费TTS服务，支持多种语音和语言。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "voice": "语音",
+            "lang": "语言",
+            "rate": "语速",
+            "volume": "音量",
+            "pitch": "音调"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "voice": "选择Edge TTS语音，如晓晓、云希等",
+            "lang": "选择语音语言，如zh-CN中文",
+            "rate": "语音语速，如+10%加快，-10%减慢",
+            "volume": "语音音量，如+10%增大，-10%减小",
+            "pitch": "语音音调，如+10Hz升高，-10Hz降低"
+          }
+        }
+      }
+    },
+    "stt": {
+      "initiate_flow": {
+        "user": "添加Silicon Flow ASR",
+        "reconfigure": "重新配置Silicon Flow ASR"
+      },
+      "entry_type": "AI Hub Silicon Flow ASR",
+      "step": {
+        "init": {
+          "title": "配置Silicon Flow ASR",
+          "description": "自定义Silicon Flow ASR语音转文本的参数。Silicon Flow提供高质量的ASR服务，支持多种模型和语言。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "model": "ASR模型"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "model": "选择ASR模型：FunAudioLLM/SenseVoiceSmall（推荐）或TeleAI/TeleSpeechASR"
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "generate_image": {
+      "name": "生成图像",
+      "description": "使用AI Hub生成图像",
+      "fields": {
+        "prompt": {
+          "name": "提示词",
+          "description": "描述要生成的图像"
+        },
+        "size": {
+          "name": "尺寸",
+          "description": "图像尺寸"
+        },
+        "model": {
+          "name": "模型",
+          "description": "使用的图像生成模型"
+        }
+      }
+    },
+    "analyze_image": {
+      "name": "分析图像",
+      "description": "使用AI Hub分析图像内容",
+      "fields": {
+        "image_file": {
+          "name": "图像文件",
+          "description": "要分析的图像文件路径"
+        },
+        "image_entity": {
+          "name": "图像实体",
+          "description": "要分析的摄像头实体ID"
+        },
+        "message": {
+          "name": "分析指令",
+          "description": "告诉AI如何分析这张图像"
+        },
+        "model": {
+          "name": "模型",
+          "description": "使用的图像分析模型"
+        },
+        "temperature": {
+          "name": "温度",
+          "description": "控制输出的随机性"
+        },
+        "max_tokens": {
+          "name": "最大令牌数",
+          "description": "限制回答的最大长度"
+        },
+        "stream": {
+          "name": "流式输出",
+          "description": "是否启用流式输出"
+        }
+      }
+    },
+    "tts_speech": {
+      "name": "Edge TTS语音合成",
+      "description": "使用Edge TTS将文本转换为语音",
+      "fields": {
+        "text": {
+          "name": "文本",
+          "description": "要转换为语音的文本内容"
+        },
+        "voice": {
+          "name": "语音",
+          "description": "选择Edge TTS语音，如zh-CN-XiaoxiaoNeural"
+        },
+        "rate": {
+          "name": "语速",
+          "description": "语音语速调节，如+10%加快，-10%减慢"
+        },
+        "volume": {
+          "name": "音量",
+          "description": "语音音量调节，如+10%增大，-10%减小"
+        },
+        "pitch": {
+          "name": "音调",
+          "description": "语音音调调节，如+10Hz升高，-10Hz降低"
+        },
+        "media_player_entity": {
+          "name": "媒体播放器",
+          "description": "指定播放语音的媒体播放器实体"
+        }
+      }
+    },
+    "stt_transcribe": {
+      "name": "Silicon Flow ASR转录",
+      "description": "使用Silicon Flow ASR将语音转换为文本",
+      "fields": {
+        "audio_file": {
+          "name": "音频文件",
+          "description": "要转录的音频文件路径（支持mp3、wav、flac等格式）"
+        },
+        "model": {
+          "name": "ASR模型",
+          "description": "使用的语音识别模型：FunAudioLLM/SenseVoiceSmall（推荐）或TeleAI/TeleSpeechASR"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh release list:*)",
+      "Bash(git tag:*)",
+      "WebFetch(domain:docs.siliconflow.cn)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python -c \"import config_flow; print(''config_flow imported successfully'')\")",
+      "Bash(python -c \"import services; print(''services imported successfully'')\")",
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

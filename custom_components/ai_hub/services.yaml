@@ -1,0 +1,236 @@
+generate_image:
+  name: 生成图像
+  description: 使用智谱AI CogView模型生成图像
+  fields:
+    prompt:
+      name: 提示词
+      description: 描述要生成的图像内容
+      required: true
+      example: "一只可爱的猫咪坐在窗台上看夕阳"
+      selector:
+        text:
+          multiline: true
+    size:
+      name: 图像尺寸
+      description: 生成图像的尺寸
+      required: false
+      default: "1024x1024"
+      selector:
+        select:
+          options:
+            - "1024x1024"
+            - "768x1344"
+            - "864x1152"
+            - "1344x768"
+            - "1152x864"
+            - "1440x720"
+            - "720x1440"
+    model:
+      name: 模型
+      description: 使用的图像生成模型
+      required: false
+      default: "cogview-3-flash"
+      selector:
+        select:
+          options:
+            - "cogview-3-flash"
+
+analyze_image:
+  name: 分析图像
+  description: 使用智谱AI分析图像内容
+  fields:
+    image_file:
+      name: 图像文件
+      description: 要分析的图像文件路径
+      required: false
+      selector:
+        text:
+    image_entity:
+      name: 图像实体
+      description: 要分析的摄像头实体ID
+      required: false
+      selector:
+        entity:
+          domain: camera
+    message:
+      name: 分析指令
+      description: 告诉AI如何分析这张图像
+      required: true
+      example: "请描述这张图片中的内容"
+      selector:
+        text:
+          multiline: true
+    model:
+      name: 模型
+      description: 使用的图像分析模型
+      required: false
+      default: "glm-4.1v-thinking-flash"
+      selector:
+        select:
+          options:
+            - "glm-4.1v-thinking-flash"
+            - "glm-4v-flash"
+    temperature:
+      name: 温度
+      description: 控制输出的随机性，值越高输出越随机
+      required: false
+      default: 0.7
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.1
+    max_tokens:
+      name: 最大令牌数
+      description: 限制回答的最大长度
+      required: false
+      default: 1024
+      selector:
+        number:
+          min: 1
+          max: 4096
+    stream:
+      name: 流式输出
+      description: 是否启用流式输出
+      required: false
+      default: false
+      selector:
+        boolean:
+
+create_automation:
+  name: 创建自动化
+  description: 通过自然语言描述创建Home Assistant自动化
+  fields:
+    description:
+      name: 自动化描述
+      description: 描述你想要的自动化行为，例如"当检测到有人移动时打开客厅的灯"
+      required: true
+      example: "每天晚上8点自动关闭所有灯光"
+      selector:
+        text:
+          multiline: true
+    name:
+      name: 自动化名称
+      description: 为自动化指定一个名称
+      required: false
+      example: "晚间关灯自动化"
+      selector:
+        text:
+    area_id:
+      name: 区域ID
+      description: 指定自动化相关的区域
+      required: false
+      example: "living_room"
+      selector:
+        text:
+
+get_automation_templates:
+  name: 获取自动化模板
+  description: 获取所有已创建的自动化模板
+
+delete_automation_template:
+  name: 删除自动化模板
+  description: 删除指定的自动化模板
+  fields:
+    template_id:
+      name: 模板ID
+      description: 要删除的模板ID
+      required: true
+      selector:
+        text:
+
+create_dashboard:
+  name: 创建仪表板
+  description: 通过自然语言描述创建Home Assistant仪表板
+  fields:
+    description:
+      name: 仪表板描述
+      description: 描述你想要的仪表板内容和布局
+      required: true
+      example: "创建一个包含温度传感器和灯光控制的主页面仪表板"
+      selector:
+        text:
+          multiline: true
+    dashboard_config:
+      name: 仪表板配置
+      description: 可选的自定义仪表板配置（JSON格式）
+      required: false
+      selector:
+        text:
+          multiline: true
+
+tts_speech:
+  name: 文本转语音
+  description: 使用智谱AI将文本转换为语音
+  fields:
+    text:
+      name: 文本内容
+      description: 要转换为语音的文本内容
+      required: true
+      example: "你好，欢迎使用智谱AI语音合成服务"
+      selector:
+        text:
+          multiline: true
+    voice:
+      name: 语音类型
+      description: 选择语音类型
+      required: false
+      default: "female"
+      selector:
+        select:
+          options:
+            - "female"
+            - "male"
+    speed:
+      name: 语速
+      description: 控制语音播放速度，1.0为正常速度
+      required: false
+      default: 1.0
+      selector:
+        number:
+          min: 0.25
+          max: 4.0
+          step: 0.1
+    volume:
+      name: 音量
+      description: 控制语音音量，1.0为正常音量
+      required: false
+      default: 1.0
+      selector:
+        number:
+          min: 0.1
+          max: 2.0
+          step: 0.1
+    response_format:
+      name: 响应格式
+      description: 音频数据的响应格式
+      required: false
+      default: "pcm"
+      selector:
+        select:
+          options:
+            - "pcm"
+    encode_format:
+      name: 编码格式
+      description: 音频数据的编码格式
+      required: false
+      default: "base64"
+      selector:
+        select:
+          options:
+            - "base64"
+            - "raw"
+    stream:
+      name: 流式输出
+      description: 是否启用流式音频输出
+      required: false
+      default: false
+      selector:
+        boolean:
+    media_player_entity:
+      name: 媒体播放器
+      description: 指定播放语音的媒体播放器实体ID（可选）
+      required: false
+      selector:
+        entity:
+          domain: media_player

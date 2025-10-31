@@ -1,0 +1,247 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to AI Hub",
+        "description": "Enter your ZhipuAI API key (required) and Silicon Flow API key (optional, for speech recognition functionality). Get ZhipuAI key [here]({api_key_url}) and Silicon Flow key from their official website.",
+        "data": {
+          "api_key": "ZhipuAI API Key",
+          "siliconflow_api_key": "Silicon Flow API Key (optional, for speech recognition)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to AI Hub service",
+      "invalid_auth": "Invalid API key",
+      "unknown": "Unknown error"
+    },
+    "abort": {
+      "already_configured": "This API key is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configuration Options",
+        "description": "Please find the corresponding subentries (Conversation Agent or AI Task) in the integration details page, and click the configuration button on the right side of each subentry to modify settings.\n\nClick 'AI Hub' on the integrations page to enter the details page, where you will see the list of configured subentries, each of which can be configured individually."
+      }
+    },
+    "abort": {
+      "configure_via_subentries": "Please configure conversation and AI task through subentries. Find the corresponding subentries in the devices page."
+    }
+  },
+  "config_subentries": {
+    "conversation": {
+      "initiate_flow": {
+        "user": "Add Conversation Agent",
+        "reconfigure": "Reconfigure Conversation Agent"
+      },
+      "entry_type": "AI Hub Conversation Agent",
+      "step": {
+        "init": {
+          "title": "Configure Conversation Agent",
+          "description": "Customize the behavior and parameters of the conversation agent. Enable recommended mode to use the best settings, or disable it to customize all parameters. After submitting, the configuration information will be switched.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "prompt": "Prompt Template",
+            "chat_model": "Chat Model",
+            "temperature": "Temperature",
+            "top_p": "Top P",
+            "top_k": "Top K",
+            "max_tokens": "Max Tokens",
+            "max_history_messages": "Max History Messages",
+            "web_search": "Web Search"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "prompt": "Custom system prompt",
+            "temperature": "Control creativity (0-2)",
+            "top_p": "Sampling parameter (0-1)",
+            "max_tokens": "Maximum response length",
+            "max_history_messages": "Number of history messages to keep",
+            "web_search": "Allow searching the internet"
+          }
+        }
+      }
+    },
+    "ai_task_data": {
+      "initiate_flow": {
+        "user": "Add AI Task",
+        "reconfigure": "Reconfigure AI Task"
+      },
+      "entry_type": "AI Hub AI Task",
+      "step": {
+        "init": {
+          "title": "Configure AI Task",
+          "description": "Customize AI task behavior and parameters. Enable recommended mode for best settings, or disable to customize all parameters. After submitting, the configuration information will be switched.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "chat_model": "Chat Model",
+            "image_model": "Image Model",
+            "temperature": "Temperature",
+            "top_p": "Top P",
+            "max_tokens": "Max Tokens"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "temperature": "Control creativity (0-2)",
+            "top_p": "Sampling parameter (0-1)",
+            "max_tokens": "Maximum response length"
+          }
+        }
+      }
+    },
+    "tts": {
+      "initiate_flow": {
+        "user": "Add Edge TTS Voice",
+        "reconfigure": "Reconfigure Edge TTS Voice"
+      },
+      "entry_type": "AI Hub Edge TTS Voice",
+      "step": {
+        "init": {
+          "title": "Configure Edge TTS Voice",
+          "description": "Customize Edge TTS text-to-speech parameters. Edge TTS is a free TTS service provided by Microsoft, supporting multiple voices and languages.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "voice": "Voice",
+            "lang": "Language",
+            "rate": "Rate",
+            "volume": "Volume",
+            "pitch": "Pitch"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "voice": "Select Edge TTS voice, like Xiaoxiao, Yunxi, etc.",
+            "lang": "Select voice language, like zh-CN for Chinese",
+            "rate": "Speech rate, like +10% faster, -10% slower",
+            "volume": "Speech volume, like +10% louder, -10% quieter",
+            "pitch": "Speech pitch, like +10Hz higher, -10Hz lower"
+          }
+        }
+      }
+    },
+    "stt": {
+      "initiate_flow": {
+        "user": "Add Silicon Flow ASR",
+        "reconfigure": "Reconfigure Silicon Flow ASR"
+      },
+      "entry_type": "AI Hub Silicon Flow ASR",
+      "step": {
+        "init": {
+          "title": "Configure Silicon Flow ASR",
+          "description": "Customize Silicon Flow ASR speech-to-text parameters. Silicon Flow provides high-quality ASR service supporting multiple models and languages.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "model": "ASR Model"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "model": "Select ASR model: FunAudioLLM/SenseVoiceSmall (recommended) or TeleAI/TeleSpeechASR"
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "generate_image": {
+      "name": "Generate Image",
+      "description": "Generate image using AI Hub CogView model",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Describe the image content to generate"
+        },
+        "size": {
+          "name": "Image Size",
+          "description": "Size of the generated image"
+        },
+        "model": {
+          "name": "Model",
+          "description": "Image generation model to use"
+        }
+      }
+    },
+    "analyze_image": {
+      "name": "Analyze Image",
+      "description": "Analyze image content using AI Hub",
+      "fields": {
+        "image_file": {
+          "name": "Image File",
+          "description": "Path to the image file to analyze"
+        },
+        "image_entity": {
+          "name": "Image Entity",
+          "description": "Camera entity ID to analyze"
+        },
+        "message": {
+          "name": "Analysis Prompt",
+          "description": "Tell AI how to analyze this image"
+        },
+        "model": {
+          "name": "Model",
+          "description": "Image analysis model to use"
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Control output randomness"
+        },
+        "max_tokens": {
+          "name": "Max Tokens",
+          "description": "Limit maximum response length"
+        },
+        "stream": {
+          "name": "Stream Output",
+          "description": "Enable streaming output"
+        }
+      }
+    },
+    "tts_speech": {
+      "name": "Edge TTS Speech Synthesis",
+      "description": "Convert text to speech using Edge TTS",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "Text content to convert to speech"
+        },
+        "voice": {
+          "name": "Voice",
+          "description": "Select Edge TTS voice, like zh-CN-XiaoxiaoNeural"
+        },
+        "rate": {
+          "name": "Rate",
+          "description": "Speech rate adjustment, like +10% faster, -10% slower"
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Speech volume adjustment, like +10% louder, -10% quieter"
+        },
+        "pitch": {
+          "name": "Pitch",
+          "description": "Speech pitch adjustment, like +10Hz higher, -10Hz lower"
+        },
+        "media_player_entity": {
+          "name": "Media Player",
+          "description": "Media player entity to play speech"
+        }
+      }
+    },
+    "stt_transcribe": {
+      "name": "Silicon Flow ASR Transcription",
+      "description": "Convert speech to text using Silicon Flow ASR",
+      "fields": {
+        "audio_file": {
+          "name": "Audio File",
+          "description": "Path to audio file to transcribe (supports mp3, wav, flac formats)"
+        },
+        "model": {
+          "name": "ASR Model",
+          "description": "Speech recognition model to use: FunAudioLLM/SenseVoiceSmall (recommended) or TeleAI/TeleSpeechASR"
+        }
+      }
+    }
+  }
+}
