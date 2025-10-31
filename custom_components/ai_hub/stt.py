@@ -48,7 +48,7 @@ async def async_setup_entry(
 class AIHubSpeechToTextEntity(SpeechToTextEntity, AIHubEntityBase):
     """AI Hub speech-to-text entity using Silicon Flow ASR."""
 
-    _attr_has_entity_name = True
+    _attr_has_entity_name = False
     _attr_supported_options = ["model"]
 
     def __init__(self, config_entry: ConfigEntry, subentry: ConfigSubentry) -> None:

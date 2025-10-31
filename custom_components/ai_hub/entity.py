@@ -51,7 +51,7 @@ _LOGGER = logging.getLogger(__name__)
 class AIHubBaseLLMEntity(Entity):
     """Base entity for AI Hub LLM."""
 
-    _attr_has_entity_name = True
+    _attr_has_entity_name = False
     _attr_should_poll = False
 
     def __init__(
@@ -724,7 +724,7 @@ class AIHubBaseLLMEntity(Entity):
 class AIHubEntityBase(Entity):
     """Base entity for AI Hub integration."""
 
-    _attr_has_entity_name = True
+    _attr_has_entity_name = False
     _attr_should_poll = False
 
     def __init__(
