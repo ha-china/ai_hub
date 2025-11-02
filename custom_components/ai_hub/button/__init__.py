@@ -128,6 +128,7 @@ async def async_setup_entry(
     """Set up AI Hub button platform for WeChat and Translation."""
     _LOGGER.info("=== BUTTON SETUP START ===")
     _LOGGER.info("Setting up button platform for entry: %s", entry.entry_id)
+    _LOGGER.info("Button platform setup function called successfully!")
     buttons = []
 
     # Only proceed if we have subentries
