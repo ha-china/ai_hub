@@ -13,17 +13,25 @@
 </p>
 
 ---
+## 前置条件
+- Home Assistant 2025.8.0 或更高版本
+- HACS 4.0 或更高版本（推荐）
+- 要体验对应的服务，需要有对应的 API Key，如果没有，可以进下面链接注册账号：
+- 智谱 API Key（用于对话助手、AI 任务、语音合成、语音识别） [注册](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)
+- 硅基流动性 API Key（用于语音识别） [注册](https://cloud.siliconflow.cn/i/U3e0rmsr)
+- 巴法云（用于微信消息推送） [注册](http://www.cloud.bemfa.com/u_register.php)
 
-AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生对接：
+AI Hub 是 Home Assistant 的自定义集成，提供与智谱，硅基流动，巴法云的原生对接：
 - 对话助手（Conversation）：作为 Assist 对话代理，支持流式回答、家居控制工具调用、图片理解。
 - AI 任务（AI Task）：生成结构化数据、生成图片（CogView 系列）。
 - 语音合成（TTS）：集成 Edge TTS，支持高质量语音合成（包含多语音、多风格、多参数）。
 - 语音识别（STT）：集成硅基流动性 SiliconFlow 语音识别，实现快速准确的语音转文本。
+  > 免费模型不支持流式，因此，体验上速度一般，除非本地机器跑不动或者不想购买收费模型。
 - 集成服务：图片分析、图片生成、TTS 播放、STT 转写。
-- AI 自动化（实验特性）：用自然语言生成并写入 automations.yaml，自动重载。
 - HACS 集成汉化：使用智谱AI自动翻译自定义集成的英文翻译文件为中文。
+  > 如果集成中已经有了zh-Hans.json，则不会自动翻译，哪怕它里面的内容是英文的。
 - 微信消息推送：集成巴法云服务，通过微信发送设备状态通知。
-> 注意：本集成全依赖互联网，因此，你的网络与设备性能决定了集成体验。
+  > 注意：本集成全依赖互联网，因此，你的网络与设备性能决定了集成体验。
 ## 功能特色
 
 ### 对话助手（Conversation）
@@ -80,13 +88,10 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 提示：本集成依赖新版的 Conversation/AI Task/子条目框架，建议使用较新的 Home Assistant 版本（>2025.8.0）。
 
 ## 快速开始（配置向导）
-1. 进入 设置 → 设备与服务 → 集成 → 添加集成，搜索“智谱清言（ai_hub）”。
+1. 进入 设置 → 设备与服务 → 集成 → 添加集成，搜索“AI HUB（ai_hub）”。
 2. 按指引输入智谱 API Key（可在 [此处](https://open.bigmodel.cn/usercenter/apikeys) 获取）。
-   - 如果还没有智谱的账号，可以先进行[注册](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)。
 3. 按指引输入硅基流动性 API Key 
-   - 如果还没有硅基的账号，可以先进行[注册](https://cloud.siliconflow.cn/i/U3e0rmsr)，通过邀请链接系统可送你15块余额。
-4. 按指引输入巴法云设备主题（可在 [此处](https://bemfa.com) 获取）。
-   - 如果还没有巴法的账号，可以先进行[注册](https://bemfa.com/register)。
+4. 按指引输入巴法云设备主题（可在 [此处](https://cloud.bemfa.com/tcp/index.html) 获取）。
 5. 配置 Edge TTS 不需要单独 API Key，Edge TTS 使用微软官方免费接口。
 6. 若需调整参数，在对应子条目点击“配置”进入推荐/高级模式配置。
 
@@ -94,7 +99,7 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 ## 使用指南
 
 ### A. 对话助手（Assist 对话代理）
-- 在 Assist 对话页面，将当前代理切换为“智谱对话助手”。
+- 在 Assist 对话页面，将当前代理切换为“AI HUB对话助手”。
 - 直接说/输：“打开客厅灯到 60%”、“帮我总结今天日程”。
 - 携带图片：在支持的前端上传或引用图片，模型会自动进行视觉分析并回答。
 - 工具调用：在子条目启用 LLM Hass API 后，模型可调用 Home Assistant 工具以控制设备/查询状态。
@@ -119,7 +124,7 @@ AI Hub 提供了多种服务，可以通过开发者工具的服务面板调用�
   - `model`: 模型选择（可选，默认cogview-3-flash）
 
 #### 图片分析 (ai_hub.analyze_image)
-- **描述**: 使用智谱AI分析图像内容
+- **描述**: 使用AI HUB分析图像内容
 - **参数**:
   - `image_file`: 图像文件路径
   - `image_entity`: 摄像头实体ID
@@ -129,7 +134,7 @@ AI Hub 提供了多种服务，可以通过开发者工具的服务面板调用�
   - `max_tokens`: 最大令牌数（可选）
 
 #### 文本转语音 (ai_hub.tts_speech)
-- **描述**: 使用智谱AI将文本转换为语音
+- **描述**: 使用智谱将文本转换为语音
 - **参数**:
   - `text`: 文本内容（必填）
   - `voice`: 语音类型（可选，female/male）
