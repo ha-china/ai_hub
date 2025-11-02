@@ -146,46 +146,32 @@
     },
     "wechat": {
       "initiate_flow": {
-        "user": "添加微信通知",
-        "reconfigure": "重新配置微信通知"
+        "user": "添加微信通知"
       },
       "entry_type": "AI Hub 微信通知",
       "step": {
         "init": {
-          "title": "配置微信通知",
-          "description": "配置巴法云微信通知功能。开启推荐模式将使用最佳配置。",
+          "title": "添加微信通知",
+          "description": "请输入您的巴法云UID来启用微信通知功能。",
           "data": {
-            "name": "名称",
-            "recommended": "推荐模式",
             "bemfa_uid": "巴法云UID"
           },
           "data_description": {
-            "recommended": "使用推荐配置",
             "bemfa_uid": "巴法云提供的用户ID，用于发送微信消息"
           }
         }
+      },
+      "abort": {
+        "weixin_no_reconfigure": "微信通知不支持重新配置。如需修改设置，请删除后重新添加。"
       }
     },
     "translation": {
       "initiate_flow": {
-        "user": "添加集成汉化",
-        "reconfigure": "重新配置集成汉化"
+        "user": "添加集成汉化"
       },
       "entry_type": "AI Hub 集成汉化",
-      "step": {
-        "init": {
-          "title": "配置集成汉化",
-          "description": "配置集成汉化功能。使用智谱AI将英文翻译文件自动翻译为中文。",
-          "data": {
-            "name": "名称",
-            "recommended": "推荐模式",
-            "custom_components_path": "自定义组件路径"
-          },
-          "data_description": {
-            "recommended": "使用推荐配置",
-            "custom_components_path": "自定义组件目录的路径，默认为custom_components"
-          }
-        }
+      "abort": {
+        "translation_no_reconfigure": "集成汉化不支持重新配置。如需修改设置，请删除后重新添加。"
       }
     }
   },
@@ -309,12 +295,12 @@
       }
     },
     "translate_components": {
-      "name": "翻译组件",
-      "description": "翻译所有自定义组件的英文翻译为中文",
+      "name": "集成汉化",
+      "description": "汉化所有自定义集成的英文翻译为中文",
       "fields": {
         "custom_components_path": {
-          "name": "组件路径",
-          "description": "自定义组件目录路径，默认为custom_components"
+          "name": "集成路径",
+          "description": "自定义集成目录路径，默认为custom_components"
         }
       }
     }

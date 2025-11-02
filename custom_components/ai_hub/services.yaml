@@ -268,12 +268,12 @@ send_wechat_message:
         text:
 
 translate_components:
-  name: 翻译组件
-  description: 翻译所有自定义组件的英文翻译为中文（需要智谱API密钥）
+  name: 集成汉化
+  description: 汉化所有自定义集成的英文翻译为中文（需要智谱API密钥）
   fields:
     custom_components_path:
-      name: 组件路径
-      description: 自定义组件目录路径
+      name: 集成路径
+      description: 自定义集成目录路径
       required: false
       default: "custom_components"
       selector:

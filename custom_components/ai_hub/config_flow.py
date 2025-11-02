@@ -234,8 +234,8 @@ class AIHubConfigFlow(ConfigFlow, domain=DOMAIN):
             "ai_task_data": AIHubSubentryFlowHandler,
             "tts": AIHubSubentryFlowHandler,
             "stt": AIHubSubentryFlowHandler,
-            "wechat": AIHubSubentryFlowHandler,
-            "translation": AIHubSubentryFlowHandler,
+            "wechat": AIHubWeChatFlowHandler,
+            "translation": AIHubTranslationFlowHandler,
         }
 
 
@@ -557,6 +557,101 @@ async def ai_hub_config_option_schema(
         })
 
     return schema
+
+
+class AIHubWeChatFlowHandler(ConfigSubentryFlow):
+    """Handle WeChat subentry flow - no reconfiguration supported."""
+
+    options: dict[str, Any]
+
+    def __init__(self) -> None:
+        """Initialize the WeChat flow handler."""
+        super().__init__()
+        self.options = {}
+
+    @property
+    def _is_new(self) -> bool:
+        """Return if this is a new subentry."""
+        return self.source == "user"
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Handle options for WeChat subentry."""
+        return await self.async_step_init(user_input)
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Handle options for WeChat subentry."""
+        # WeChat subentries cannot be reconfigured
+        if not self._is_new:
+            return self.async_abort(reason="weixin_no_reconfigure")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            # Validate input
+            if not user_input.get(CONF_BEMFA_UID, "").strip():
+                errors[CONF_BEMFA_UID] = "bemfa_uid_required"
+            else:
+                return self.async_create_entry(
+                    title=DEFAULT_WECHAT_NAME,
+                    data={
+                        CONF_BEMFA_UID: user_input[CONF_BEMFA_UID].strip(),
+                        CONF_RECOMMENDED: True,
+                    }
+                )
+
+        # Show form - only require Bemfa UID
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required(
+                    CONF_BEMFA_UID,
+                    default=""
+                ): str,
+            }),
+            errors=errors,
+        )
+
+
+class AIHubTranslationFlowHandler(ConfigSubentryFlow):
+    """Handle Translation subentry flow - no reconfiguration supported."""
+
+    options: dict[str, Any]
+
+    def __init__(self) -> None:
+        """Initialize the Translation flow handler."""
+        super().__init__()
+        self.options = {}
+
+    @property
+    def _is_new(self) -> bool:
+        """Return if this is a new subentry."""
+        return self.source == "user"
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Handle options for Translation subentry."""
+        return await self.async_step_init(user_input)
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Handle options for Translation subentry."""
+        # Translation subentries cannot be reconfigured
+        if not self._is_new:
+            return self.async_abort(reason="translation_no_reconfigure")
+
+        # Translation doesn't need any input, just create the subentry
+        return self.async_create_entry(
+            title=DEFAULT_TRANSLATION_NAME,
+            data={
+                CONF_CUSTOM_COMPONENTS_PATH: "custom_components",
+                CONF_RECOMMENDED: True,
+            }
+        )
 
 
 class AIHubOptionsFlowHandler(OptionsFlow):

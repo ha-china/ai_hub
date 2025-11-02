@@ -74,30 +74,77 @@ class AIHubWeChatButton(ButtonEntity):
             _LOGGER.error("Failed to send test WeChat message: %s", e)
 
 
+class AIHubTranslationButton(ButtonEntity):
+    """AI Hub Translation button."""
+
+    _attr_has_entity_name = False
+    _attr_should_poll = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:translate"
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, subentry: config_entry_flow.ConfigSubentry) -> None:
+        """Initialize the button."""
+        super().__init__()
+
+        self._hass = hass
+        self._subentry = subentry
+
+        # Use subentry ID as base unique_id
+        self._attr_unique_id = f"{subentry.subentry_id}_translate"
+        self._attr_name = "一键汉化"
+
+        # Set device info to match existing device exactly
+        self._attr_device_info = dr.DeviceInfo(
+            identifiers={(DOMAIN, subentry.subentry_id)},
+            name=subentry.title,
+            manufacturer="老王杂谈说",  # Match existing device
+            model="Integration Localization",
+            entry_type=dr.DeviceEntryType.SERVICE,
+        )
+
+    async def async_press(self) -> None:
+        """Press the button - trigger translation."""
+        try:
+            _LOGGER.info("Translation button pressed, starting translation process")
+            result = await self._hass.services.async_call(
+                "ai_hub",
+                "translate_components",
+                {
+                    "custom_components_path": self._subentry.data.get("custom_components_path", "custom_components")
+                },
+                blocking=True,
+                return_response=True,
+            )
+            _LOGGER.info("Translation process completed: %s", result)
+        except Exception as e:
+            _LOGGER.error("Failed to run translation process: %s", e)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up AI Hub WeChat button platform."""
-    _LOGGER.info("=== WECHAT BUTTON SETUP START ===")
-    _LOGGER.info("Setting up WeChat button platform for entry: %s", entry.entry_id)
+    """Set up AI Hub button platform for WeChat and Translation."""
+    _LOGGER.info("=== BUTTON SETUP START ===")
+    _LOGGER.info("Setting up button platform for entry: %s", entry.entry_id)
     buttons = []
 
     # Only proceed if we have subentries
     if not hasattr(entry, 'subentries') or not entry.subentries:
-        _LOGGER.warning("No subentries found for WeChat button setup")
-        _LOGGER.info("=== WECHAT BUTTON SETUP END - NO SUBENTRIES ===")
+        _LOGGER.warning("No subentries found for button setup")
+        _LOGGER.info("=== BUTTON SETUP END - NO SUBENTRIES ===")
         return
 
-    _LOGGER.info("Found %d subentries for WeChat button setup", len(entry.subentries))
+    _LOGGER.info("Found %d subentries for button setup", len(entry.subentries))
 
     # List all subentries for debugging
     for subentry in entry.subentries.values():
         _LOGGER.info("Subentry: %s, type: %s, title: %s", subentry.subentry_id, subentry.subentry_type, subentry.title)
 
-    # Create buttons for each WeChat subentry
+    # Create buttons for WeChat and Translation subentries
     wechat_found = False
+    translation_found = False
     for subentry in entry.subentries.values():
         _LOGGER.debug("Checking subentry: %s, type: %s", subentry.subentry_id, subentry.subentry_type)
         if subentry.subentry_type == "wechat":
@@ -107,21 +154,27 @@ async def async_setup_entry(
             buttons.append(button)
             _LOGGER.info("Created WeChat test button for subentry: %s", subentry.subentry_id)
             _LOGGER.info("Button unique_id: %s", button._attr_unique_id)
-            _LOGGER.info("Button device_info: %s", button._attr_device_info)
+        elif subentry.subentry_type == "translation":
+            translation_found = True
+            _LOGGER.info("Found Translation subentry: %s, creating button", subentry.subentry_id)
+            button = AIHubTranslationButton(hass, entry, subentry)
+            buttons.append(button)
+            _LOGGER.info("Created Translation button for subentry: %s", subentry.subentry_id)
+            _LOGGER.info("Button unique_id: %s", button._attr_unique_id)
         else:
-            _LOGGER.debug("Skipping non-wechat subentry: %s", subentry.subentry_type)
+            _LOGGER.debug("Skipping non-button subentry: %s", subentry.subentry_type)
 
     if buttons:
-        _LOGGER.info("Adding %d WeChat test button(s) to Home Assistant", len(buttons))
+        _LOGGER.info("Adding %d button(s) to Home Assistant", len(buttons))
         # Add buttons with subentry_id to ensure proper subentry association
         for button in buttons:
             _LOGGER.info("Adding button with subentry_id: %s", button._subentry.subentry_id)
             async_add_entities([button], config_subentry_id=button._subentry.subentry_id)
-        _LOGGER.info("Successfully added %d WeChat test button(s)", len(buttons))
+        _LOGGER.info("Successfully added %d button(s)", len(buttons))
     else:
-        if not wechat_found:
-            _LOGGER.info("No WeChat subentries found, no test buttons created")
+        if not wechat_found and not translation_found:
+            _LOGGER.info("No WeChat or Translation subentries found, no buttons created")
         else:
-            _LOGGER.warning("WeChat subentries found but no buttons were created!")
+            _LOGGER.warning("WeChat or Translation subentries found but no buttons were created!")
 
-    _LOGGER.info("=== WECHAT BUTTON SETUP END ===")
+    _LOGGER.info("=== BUTTON SETUP END ===")
