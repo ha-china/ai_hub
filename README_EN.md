@@ -19,6 +19,8 @@ AI Hub is a custom integration for Home Assistant, providing native integration 
 - Speech-to-Text (STT): Integrates SiliconFlow for speech recognition, delivering fast and accurate voice-to-text.
 - Integrated Services: Image analysis, image generation, TTS playback, STT transcription.
 - AI Automation (experimental): Generate and write automations.yaml using natural language, auto-reload on change.
+- HACS Integration Localization: Automatically translate English translation files of custom integrations to Chinese using Zhipu AI.
+- WeChat Message Push: Integrate with Bemfa Cloud to send device status notifications via WeChat.
 > Note: This integration requires an internet connection, so your network and device performance will affect your experience.
 
 ## Features

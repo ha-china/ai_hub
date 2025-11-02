@@ -21,6 +21,8 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 - 语音识别（STT）：集成硅基流动性 SiliconFlow 语音识别，实现快速准确的语音转文本。
 - 集成服务：图片分析、图片生成、TTS 播放、STT 转写。
 - AI 自动化（实验特性）：用自然语言生成并写入 automations.yaml，自动重载。
+- HACS 集成汉化：使用智谱AI自动翻译自定义集成的英文翻译文件为中文。
+- 微信消息推送：集成巴法云服务，通过微信发送设备状态通知。
 > 注意：本集成全依赖互联网，因此，你的网络与设备性能决定了集成体验。
 ## 功能特色
 
@@ -47,8 +49,19 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 - 集成硅基流动性（SiliconFlow）高兼容性的语音识别服务。
 - 支持上传 WAV（推荐 16k/16bit 单声道，自动标准化）。
 - 支持普通话/英文等主流语种，自动检测。
-- 支持流式/非流式识别，实时拼接文本，低延迟返回。
+- 支持非流式识别。
 - 适合实时语音控制、自动化等场景。
+
+### HACS 集成汉化
+- 自动翻译自定义集成的英文翻译文件为中文，提升用户体验。
+- 使用智谱AI进行高质量翻译，支持批量处理多个组件。
+- 可配置自定义组件目录路径，灵活适配不同安装方式。
+
+### 微信消息推送 （Wechat, Bemfa）
+- 集成巴法云服务，通过微信发送设备状态通知。
+- 支持发送文本消息和图片消息，满足不同通知需求。
+- 配置简单，只需获取巴法云设备主题即可使用。
+
 
 ### 配置与管理
 - 推荐/高级双模式：默认推荐参数即用即走；高级模式开放模型与调参。
@@ -96,6 +109,62 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 
 ### C. AI 任务（生成图片）
 - 使用服务 ai_hub.generate_image 生成图片（CogView）：
+
+### D. 服务调用
+
+AI Hub 提供了多种服务，可以通过开发者工具的服务面板调用：
+
+#### 图片生成 (ai_hub.generate_image)
+- **描述**: 使用智谱AI CogView模型生成图像
+- **参数**: 
+  - `prompt`: 图像描述（必填）
+  - `size`: 图像尺寸（可选，默认1024x1024）
+  - `model`: 模型选择（可选，默认cogview-3-flash）
+
+#### 图片分析 (ai_hub.analyze_image)
+- **描述**: 使用智谱AI分析图像内容
+- **参数**:
+  - `image_file`: 图像文件路径
+  - `image_entity`: 摄像头实体ID
+  - `message`: 分析指令（必填）
+  - `model`: 模型选择（可选）
+  - `temperature`: 温度参数（可选）
+  - `max_tokens`: 最大令牌数（可选）
+
+#### 文本转语音 (ai_hub.tts_speech)
+- **描述**: 使用智谱AI将文本转换为语音
+- **参数**:
+  - `text`: 文本内容（必填）
+  - `voice`: 语音类型（可选，female/male）
+  - `speed`: 语速（可选）
+  - `volume`: 音量（可选）
+  - `media_player_entity`: 媒体播放器实体ID（可选）
+
+#### 语音转文本 (ai_hub.stt_transcribe)
+- **描述**: 使用SiliconFlow将语音文件转换为文本
+- **参数**:
+  - `file`: 音频文件路径（必填）
+  - `model`: STT模型选择（可选）
+
+#### 创建自动化 (ai_hub.create_automation)
+- **描述**: 通过自然语言描述创建Home Assistant自动化
+- **参数**:
+  - `description`: 自动化描述（必填）
+  - `name`: 自动化名称（可选）
+  - `area_id`: 区域ID（可选）
+
+#### 翻译组件 (ai_hub.translate_components)
+- **描述**: 翻译所有自定义组件的英文翻译为中文
+- **参数**:
+  - `custom_components_path`: 自定义组件目录路径（可选，默认custom_components）
+
+#### 发送微信消息 (ai_hub.send_wechat_message)
+- **描述**: 通过巴法云发送微信消息通知
+- **参数**:
+  - `device_entity`: 要监控状态的实体ID（必填）
+  - `message`: 消息内容（必填）
+  - `group`: 消息分组（可选）
+  - `url`: 链接地址（可选）
   - 参数：prompt（必填）、size（默认 1024x1024）、model（默认 cogview-3-flash）。
   - 返回：image_url 或 image_base64（内部自动转为 PNG 以便前端/卡片使用）。
 
