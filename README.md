@@ -65,7 +65,7 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
 
 ### 配置与管理
 - 推荐/高级双模式：默认推荐参数即用即走；高级模式开放模型与调参。
-- 子条目（Subentry）：在一个集成下，分别管理 Conversation / AI Task / TTS / STT 的参数。
+- 子条目（Subentry）：在一个集成下，分别管理 Conversation / AI Task / TTS / STT / 微信消息推送 等服务。
 
 ## 安装
 
@@ -85,13 +85,10 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱大模型的原生
    - 如果还没有智谱的账号，可以先进行[注册](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)。
 3. 按指引输入硅基流动性 API Key 
    - 如果还没有硅基的账号，可以先进行[注册](https://cloud.siliconflow.cn/i/U3e0rmsr)，通过邀请链接系统可送你15块余额。
-3. 配置 Edge TTS 不需要单独 API Key，Edge TTS 使用微软官方免费接口（有每日配额限制）。
-4. 成功后会自动创建四个“子条目”：
-   - 对话助手 conversation
-   - AI 任务 ai_task_data
-   - 文本转语音 tts（Edge TTS）
-   - 语音转文本 stt（SiliconFlow）
-5. 若需调整参数，在对应子条目点击“配置”进入推荐/高级模式配置。
+4. 按指引输入巴法云设备主题（可在 [此处](https://bemfa.com) 获取）。
+   - 如果还没有巴法的账号，可以先进行[注册](https://bemfa.com/register)。
+5. 配置 Edge TTS 不需要单独 API Key，Edge TTS 使用微软官方免费接口。
+6. 若需调整参数，在对应子条目点击“配置”进入推荐/高级模式配置。
 
 
 ## 使用指南
