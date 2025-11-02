@@ -144,6 +144,50 @@
           }
         }
       }
+    },
+    "wechat": {
+      "initiate_flow": {
+        "user": "Add WeChat Notification",
+        "reconfigure": "Reconfigure WeChat Notification"
+      },
+      "entry_type": "AI Hub WeChat Notification",
+      "step": {
+        "init": {
+          "title": "Configure WeChat Notification",
+          "description": "Configure Bemfa cloud WeChat notification function. Enable recommended mode to use best settings.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "bemfa_uid": "Bemfa UID"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "bemfa_uid": "Bemfa provided user ID for sending WeChat messages"
+          }
+        }
+      }
+    },
+    "translation": {
+      "initiate_flow": {
+        "user": "Add Component Translation",
+        "reconfigure": "Reconfigure Component Translation"
+      },
+      "entry_type": "AI Hub Component Translation",
+      "step": {
+        "init": {
+          "title": "Configure Component Translation",
+          "description": "Configure component translation function. Use Zhipu AI to automatically translate English translation files to Chinese.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "custom_components_path": "Custom Components Path"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "custom_components_path": "Custom components directory path, default is custom_components"
+          }
+        }
+      }
     }
   },
   "services": {

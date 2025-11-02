@@ -26,7 +26,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up conversation entities."""
+    _LOGGER.info("Setting up conversation entities, subentries: %s", config_entry.subentries)
+
+    if not config_entry.subentries:
+        _LOGGER.warning("No subentries found in config entry")
+        return
+
     for subentry in config_entry.subentries.values():
+        _LOGGER.info("Processing subentry: %s, type: %s", subentry.subentry_id, subentry.subentry_type)
         if subentry.subentry_type != "conversation":
             continue
 
@@ -34,6 +41,7 @@ async def async_setup_entry(
             [AIHubConversationEntity(config_entry, subentry)],
             config_subentry_id=subentry.subentry_id,
         )
+        _LOGGER.info("Created conversation entity for subentry: %s", subentry.subentry_id)
 
 
 class AIHubConversationEntity(

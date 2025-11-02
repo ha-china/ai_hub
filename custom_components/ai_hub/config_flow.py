@@ -14,6 +14,7 @@ from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
     ConfigSubentryFlow,
+    OptionsFlow,
     SubentryFlowResult,
 )
 from homeassistant.const import CONF_API_KEY, CONF_NAME
@@ -30,9 +31,11 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_BEMFA_UID,
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
     CONF_SILICONFLOW_API_KEY,
+    CONF_CUSTOM_COMPONENTS_PATH,
     CONF_LLM_HASS_API,
     CONF_MAX_HISTORY_MESSAGES,
     CONF_MAX_TOKENS,
@@ -51,6 +54,8 @@ from .const import (
     DEFAULT_CONVERSATION_NAME,
     DEFAULT_TITLE,
     DEFAULT_TTS_NAME,
+    DEFAULT_WECHAT_NAME,
+    DEFAULT_TRANSLATION_NAME,
     DOMAIN,
     RECOMMENDED_AI_TASK_MAX_TOKENS,
     RECOMMENDED_AI_TASK_MODEL,
@@ -76,6 +81,8 @@ from .const import (
     RECOMMENDED_CONVERSATION_OPTIONS,
     RECOMMENDED_AI_TASK_OPTIONS,
     RECOMMENDED_STT_OPTIONS,
+    RECOMMENDED_WECHAT_OPTIONS,
+    RECOMMENDED_TRANSLATION_OPTIONS,
     RECOMMENDED_TTS_OPTIONS,
     RECOMMENDED_TTS_MODEL,
     RECOMMENDED_STT_MODEL,
@@ -96,34 +103,37 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema({
-    vol.Required(CONF_API_KEY): str,
+    vol.Optional(CONF_API_KEY): str,
     vol.Optional(CONF_SILICONFLOW_API_KEY): str,
+    vol.Optional(CONF_BEMFA_UID): str,
 })
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
     """Validate the user input allows us to connect."""
-    headers = {
-        "Authorization": f"Bearer {data[CONF_API_KEY]}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": "GLM-4-Flash",
-        "messages": [{"role": "user", "content": "Hi"}],
-        "max_tokens": 10,
-    }
+    # Only validate API key if it's provided
+    if CONF_API_KEY in data and data[CONF_API_KEY].strip():
+        headers = {
+            "Authorization": f"Bearer {data[CONF_API_KEY]}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "GLM-4-Flash",
+            "messages": [{"role": "user", "content": "Hi"}],
+            "max_tokens": 10,
+        }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            AI_HUB_CHAT_URL,
-            json=payload,
-            headers=headers,
-            timeout=aiohttp.ClientTimeout(total=10),
-        ) as response:
-            if response.status == 401:
-                raise ValueError("Invalid API key")
-            if response.status != 200:
-                error_text = await response.text()
-                raise Exception(f"API test failed: {error_text}")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                AI_HUB_CHAT_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as response:
+                if response.status == 401:
+                    raise ValueError("Invalid API key")
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API test failed: {error_text}")
 
 
 class AIHubConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -158,7 +168,7 @@ class AIHubConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            # Create entry with optional STT based on Silicon Flow API key
+            # Create entry with subentries
             subentries = [
                 {
                     "subentry_type": "conversation",
@@ -182,6 +192,18 @@ class AIHubConfigFlow(ConfigFlow, domain=DOMAIN):
                     "subentry_type": "stt",
                     "data": RECOMMENDED_STT_OPTIONS,
                     "title": DEFAULT_STT_NAME,
+                    "unique_id": None,
+                },
+                {
+                    "subentry_type": "wechat",
+                    "data": RECOMMENDED_WECHAT_OPTIONS,
+                    "title": DEFAULT_WECHAT_NAME,
+                    "unique_id": None,
+                },
+                {
+                    "subentry_type": "translation",
+                    "data": RECOMMENDED_TRANSLATION_OPTIONS,
+                    "title": DEFAULT_TRANSLATION_NAME,
                     "unique_id": None,
                 },
             ]
@@ -212,6 +234,8 @@ class AIHubConfigFlow(ConfigFlow, domain=DOMAIN):
             "ai_task_data": AIHubSubentryFlowHandler,
             "tts": AIHubSubentryFlowHandler,
             "stt": AIHubSubentryFlowHandler,
+            "wechat": AIHubSubentryFlowHandler,
+            "translation": AIHubSubentryFlowHandler,
         }
 
 
@@ -243,6 +267,10 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
                     self.options = RECOMMENDED_TTS_OPTIONS.copy()
                 elif self._subentry_type == "stt":
                     self.options = RECOMMENDED_STT_OPTIONS.copy()
+                elif self._subentry_type == "wechat":
+                    self.options = RECOMMENDED_WECHAT_OPTIONS.copy()
+                elif self._subentry_type == "translation":
+                    self.options = RECOMMENDED_TRANSLATION_OPTIONS.copy()
                 else:
                     self.options = RECOMMENDED_CONVERSATION_OPTIONS.copy()
             else:
@@ -309,6 +337,10 @@ async def ai_hub_config_option_schema(
             default_name = DEFAULT_TTS_NAME
         elif subentry_type == "stt":
             default_name = DEFAULT_STT_NAME
+        elif subentry_type == "wechat":
+            default_name = DEFAULT_WECHAT_NAME
+        elif subentry_type == "translation":
+            default_name = DEFAULT_TRANSLATION_NAME
         else:
             default_name = DEFAULT_CONVERSATION_NAME
         schema[vol.Required(CONF_NAME, default=default_name)] = str
@@ -335,6 +367,24 @@ async def ai_hub_config_option_schema(
         elif subentry_type == "stt":
             # In recommended mode, no configuration options needed
             pass
+        elif subentry_type == "wechat":
+            # WeChat: simple recommended mode with minimal configuration
+            schema.update({
+                vol.Optional(
+                    CONF_BEMFA_UID,
+                    default=options.get(CONF_BEMFA_UID, ""),
+                    description={"suggested_value": options.get(CONF_BEMFA_UID)},
+                ): str,
+            })
+        elif subentry_type == "translation":
+            # Translation: simple recommended mode with minimal configuration
+            schema.update({
+                vol.Optional(
+                    CONF_CUSTOM_COMPONENTS_PATH,
+                    default=options.get(CONF_CUSTOM_COMPONENTS_PATH, "custom_components"),
+                    description={"suggested_value": options.get(CONF_CUSTOM_COMPONENTS_PATH)},
+                ): str,
+            })
         return schema
 
     # Show advanced options only when not in recommended mode
@@ -488,4 +538,32 @@ async def ai_hub_config_option_schema(
             ),
         })
 
+    elif subentry_type == "wechat":
+        schema.update({
+            vol.Optional(
+                CONF_BEMFA_UID,
+                default=options.get(CONF_BEMFA_UID, ""),
+                description={"suggested_value": options.get(CONF_BEMFA_UID)},
+            ): str,
+        })
+
+    elif subentry_type == "translation":
+        schema.update({
+            vol.Optional(
+                CONF_CUSTOM_COMPONENTS_PATH,
+                default=options.get(CONF_CUSTOM_COMPONENTS_PATH, "custom_components"),
+                description={"suggested_value": options.get(CONF_CUSTOM_COMPONENTS_PATH)},
+            ): str,
+        })
+
     return schema
+
+
+class AIHubOptionsFlowHandler(OptionsFlow):
+    """Handle options flow for AI Hub."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options for the custom component."""
+        return self.async_abort(reason="configure_via_subentries")

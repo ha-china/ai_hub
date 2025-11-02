@@ -34,7 +34,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.CONVERSATION, Platform.AI_TASK, Platform.TTS, Platform.STT]
+PLATFORMS = [Platform.CONVERSATION, Platform.AI_TASK, Platform.TTS, Platform.STT, Platform.BUTTON]
 
 type AIHubConfigEntry = ConfigEntry[str]  # Store API key
 
@@ -42,45 +42,60 @@ type AIHubConfigEntry = ConfigEntry[str]  # Store API key
 async def async_setup_entry(hass: HomeAssistant, entry: AIHubConfigEntry) -> bool:
     """Set up AI Hub from a config entry."""
 
-    # Validate API key by testing API connection
-    api_key = entry.data[CONF_API_KEY]
+    # Get API key (may be None if not provided)
+    api_key = entry.data.get(CONF_API_KEY)
 
-    try:
-        # Test the connection with a simple API call
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": "GLM-4-Flash",
-            "messages": [{"role": "user", "content": "Hi"}],
-            "max_tokens": 10,
-        }
+    # Validate API key by testing API connection only if provided
+    if api_key and api_key.strip():
+        try:
+            # Test the connection with a simple API call
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "GLM-4-Flash",
+                "messages": [{"role": "user", "content": "Hi"}],
+                "max_tokens": 10,
+            }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                AI_HUB_CHAT_URL,
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=10),
-            ) as response:
-                if response.status == 401:
-                    raise ConfigEntryAuthFailed("Invalid API key")
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise ConfigEntryNotReady(f"API test failed: {error_text}")
-    except aiohttp.ClientError as err:
-        raise ConfigEntryNotReady(f"Failed to connect: {err}") from err
-    except ConfigEntryAuthFailed:
-        raise
-    except Exception as err:
-        raise ConfigEntryNotReady(f"Unexpected error: {err}") from err
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    AI_HUB_CHAT_URL,
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as response:
+                    if response.status == 401:
+                        raise ConfigEntryAuthFailed("Invalid API key")
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise ConfigEntryNotReady(f"API test failed: {error_text}")
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Failed to connect to API: {err}")
+            raise ConfigEntryNotReady(f"Failed to connect: {err}") from err
+        except ConfigEntryAuthFailed:
+            raise
+        except Exception as err:
+            _LOGGER.error(f"API validation failed: {err}")
+            raise ConfigEntryNotReady(f"API validation failed: {err}") from err
 
     # Store API key in runtime data
     entry.runtime_data = api_key
 
-    # Forward setup to platforms first
+    # Forward setup to platforms
+    _LOGGER.info("Setting up AI Hub platforms: %s", PLATFORMS)
+    _LOGGER.info("Entry has subentries: %s", hasattr(entry, 'subentries') and entry.subentries)
+
+    # Check if we have wechat subentries
+    has_wechat = (
+        hasattr(entry, 'subentries') and entry.subentries and
+        any(subentry.subentry_type == "wechat" for subentry in entry.subentries.values())
+    )
+    _LOGGER.info("Has WeChat subentry: %s", has_wechat)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _LOGGER.info("Platforms setup completed")
 
     # Set up intent handlers
     from .intents import async_setup_intents
@@ -107,7 +122,11 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: AIHubConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Unload all platforms including BUTTON
+    all_platforms = PLATFORMS.copy()
+    if Platform.BUTTON not in all_platforms:
+        all_platforms.append(Platform.BUTTON)
+    return await hass.config_entries.async_unload_platforms(entry, all_platforms)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

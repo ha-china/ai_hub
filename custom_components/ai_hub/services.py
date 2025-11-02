@@ -8,11 +8,13 @@ import io
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from pathlib import Path
 
 import aiohttp
+import requests
 import voluptuous as vol
 from homeassistant.components import camera
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -25,11 +27,14 @@ from .const import (
     AI_HUB_IMAGE_GEN_URL,
     AI_HUB_STT_AUDIO_FORMATS,
     AI_HUB_STT_MODELS,
+    BEMFA_API_URL,
     CONF_API_KEY,
+    CONF_BEMFA_UID,
     CONF_CHAT_MODEL,
     CONF_MAX_TOKENS,
     CONF_STT_FILE,
     CONF_TEMPERATURE,
+    CONF_CUSTOM_COMPONENTS_PATH,
     DEFAULT_REQUEST_TIMEOUT,
     DOMAIN,
     EDGE_TTS_VOICES,
@@ -44,6 +49,8 @@ from .const import (
     SERVICE_GENERATE_IMAGE,
     SERVICE_STT_TRANSCRIBE,
     SERVICE_TTS_SPEECH,
+    SERVICE_SEND_WECHAT_MESSAGE,
+    SERVICE_TRANSLATE_COMPONENTS,
     SILICONFLOW_ASR_URL,
     STT_MAX_FILE_SIZE_MB,
     TTS_DEFAULT_PITCH,
@@ -88,15 +95,46 @@ STT_SCHEMA = {
     vol.Optional("model", default=RECOMMENDED_STT_MODEL): vol.In(AI_HUB_STT_MODELS),
 }
 
+# Schema for Bemfa WeChat service
+WECHAT_SCHEMA = {
+    vol.Required("device_entity"): cv.entity_id,
+    vol.Required("message"): cv.string,
+    vol.Optional("group", default="default"): cv.string,
+    vol.Optional("url", default=""): cv.string,
+}
+
+# Schema for translation service
+TRANSLATION_SCHEMA = {
+    vol.Optional("custom_components_path", default="custom_components"): cv.string,
+}
+
 
 async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
     """Set up services for AI Hub integration."""
 
     api_key = config_entry.runtime_data
+    bemfa_uid = config_entry.data.get(CONF_BEMFA_UID) if hasattr(config_entry, 'data') else None
+
+    # Store bemfa_uid in config_entry for easy access
+    if bemfa_uid:
+        setattr(config_entry, 'bemfa_uid', bemfa_uid)
+
+    # Function to check if we have required API keys for services
+    def has_zhipu_api_key() -> bool:
+        return api_key is not None and api_key.strip() != ""
+
+    def has_bemfa_uid() -> bool:
+        return bemfa_uid is not None and bemfa_uid.strip() != ""
 
     async def handle_analyze_image(call: ServiceCall) -> dict:
         """Handle image analysis service call."""
         try:
+            if not has_zhipu_api_key():
+                return {
+                    "success": False,
+                    "error": "智谱AI API密钥未配置，请先在集成配置中设置API密钥"
+                }
+
             image_data = None
 
             # Get image from file
@@ -186,6 +224,11 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
     async def handle_generate_image(call: ServiceCall) -> dict:
         """Handle image generation service call."""
         try:
+            if not has_zhipu_api_key():
+                return {
+                    "success": False,
+                    "error": "智谱AI API密钥未配置，请先在集成配置中设置API密钥"
+                }
             prompt = call.data["prompt"]
             size = call.data.get("size", "1024x1024")
             model = call.data.get("model", RECOMMENDED_IMAGE_MODEL)
@@ -252,6 +295,11 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
     async def handle_tts_speech(call: ServiceCall) -> dict:
         """Handle TTS service call."""
         try:
+            if not has_zhipu_api_key():
+                return {
+                    "success": False,
+                    "error": "智谱AI API密钥未配置，请先在集成配置中设置API密钥"
+                }
             text = call.data["text"]
             voice = call.data.get("voice", TTS_DEFAULT_VOICE)
             speed = float(call.data.get("speed", TTS_DEFAULT_VOLUME))
@@ -425,6 +473,13 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
     async def handle_stt_transcribe(call: ServiceCall) -> dict:
         """Handle Silicon Flow STT service call."""
         try:
+            # Check if Silicon Flow API key is configured
+            siliconflow_api_key = getattr(config_entry, 'data', {}).get(CONF_SILICONFLOW_API_KEY) if hasattr(config_entry, 'data') else None
+            if not siliconflow_api_key or not siliconflow_api_key.strip():
+                return {
+                    "success": False,
+                    "error": "Silicon Flow API密钥未配置，请先在集成配置中设置"
+                }
             audio_file = call.data[CONF_STT_FILE]
             model = call.data.get("model", RECOMMENDED_STT_MODEL)
 
@@ -466,7 +521,7 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
 
             # 构建 STT API 请求
             headers = {
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {siliconflow_api_key}",
             }
 
             # 准备文件上传
@@ -549,6 +604,115 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
             _LOGGER.error("STT service error: %s", exc, exc_info=True)
             return {"success": False, "error": f"STT 转录失败: {exc}"}
 
+    async def handle_send_wechat_message(call: ServiceCall) -> dict:
+        """Handle Bemfa WeChat message service call."""
+        try:
+            # Get Bemfa UID from config entry or service data
+            bemfa_uid = getattr(config_entry, 'bemfa_uid', None) or call.data.get("bemfa_uid")
+
+            if not bemfa_uid or not bemfa_uid.strip():
+                return {
+                    "success": False,
+                    "error": "Bemfa UID 未配置，请在集成配置中设置或通过服务参数提供"
+                }
+
+            device_entity = call.data["device_entity"]
+            message = call.data["message"].strip()
+            group = call.data.get("group", "default")
+            url = call.data.get("url", "")
+
+            if not device_entity or not message:
+                return {
+                    "success": False,
+                    "error": "device_entity 和 message 参数必填"
+                }
+
+            # Get entity state
+            state_obj = hass.states.get(device_entity)
+            if state_obj:
+                friendly_name = state_obj.attributes.get("friendly_name", device_entity)
+                state_value = state_obj.state
+            else:
+                friendly_name = device_entity
+                state_value = "无实体状态"
+
+            final_message = f"{friendly_name}（状态：{state_value}）: {message}"
+            _LOGGER.debug("最终发送微信消息内容：%s", final_message)
+
+            payload = {
+                "uid": bemfa_uid,
+                "device": device_entity.replace(".", "_"),
+                "message": final_message,
+                "group": group,
+                "url": url,
+            }
+
+            headers = {"Content-Type": "application/json; charset=utf-8"}
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(
+                    BEMFA_API_URL,
+                    json=payload,
+                    headers=headers
+                ) as response:
+                    resp_text = await response.text()
+                    if response.status == 200:
+                        _LOGGER.info("微信消息发送成功")
+                        return {
+                            "success": True,
+                            "message": "微信消息发送成功",
+                            "device": device_entity,
+                            "group": group
+                        }
+                    else:
+                        _LOGGER.error("发送失败 [%s]: %s", response.status, resp_text)
+                        return {
+                            "success": False,
+                            "error": f"发送失败 [{response.status}]: {resp_text}"
+                        }
+
+        except aiohttp.ClientError as exc:
+            _LOGGER.error("网络请求错误: %s", exc)
+            return {"success": False, "error": f"网络请求错误: {exc}"}
+        except Exception as exc:
+            _LOGGER.exception("发送微信消息异常: %s", exc)
+            return {"success": False, "error": f"发送微信消息异常: {exc}"}
+
+    async def handle_translate_components(call: ServiceCall) -> dict:
+        """Handle translation service call."""
+        try:
+            # Get parameters
+            custom_components_path = call.data.get("custom_components_path", "custom_components")
+
+            # Check if Zhipu API key is available
+            if not has_zhipu_api_key():
+                return {
+                    "success": False,
+                    "error": "智谱AI API密钥未配置，请先配置AI Hub集成"
+                }
+
+            _LOGGER.info("开始组件翻译...")
+
+            # Run translation in background thread
+            result = await hass.async_add_executor_job(
+                translate_all_components,
+                custom_components_path,
+                api_key
+            )
+
+            return {
+                "success": True,
+                "result": result
+            }
+
+        except Exception as exc:
+            _LOGGER.error("翻译服务错误: %s", exc)
+            return {
+                "success": False,
+                "error": f"翻译服务错误: {exc}"
+            }
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -579,6 +743,22 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
         SERVICE_STT_TRANSCRIBE,
         handle_stt_transcribe,
         schema=vol.Schema(STT_SCHEMA),
+        supports_response=True
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_WECHAT_MESSAGE,
+        handle_send_wechat_message,
+        schema=vol.Schema(WECHAT_SCHEMA),
+        supports_response=True
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TRANSLATE_COMPONENTS,
+        handle_translate_components,
+        schema=vol.Schema(TRANSLATION_SCHEMA),
         supports_response=True
     )
 
@@ -703,3 +883,184 @@ async def _handle_stream_response(hass: HomeAssistant, response: aiohttp.ClientR
             "success": False,
             "error": str(err)
         }
+
+
+# Translation functionality (adapted from translation_localizer)
+def translate_all_components(custom_components_path: str, api_key: str) -> dict:
+    """Translate all components in the custom_components directory."""
+    # Find the custom components directory
+    base_path = None
+
+    # Try common paths
+    paths_to_try = [
+        Path(custom_components_path),
+        Path("/config") / custom_components_path,
+        Path.home() / ".homeassistant" / custom_components_path,
+    ]
+
+    for path in paths_to_try:
+        if path.exists() and path.is_dir():
+            base_path = path
+            break
+
+    if not base_path:
+        return {
+            "translated": 0,
+            "skipped": 0,
+            "error": f"Custom components directory not found: {custom_components_path}"
+        }
+
+    _LOGGER.info(f"Scanning components in: {base_path}")
+
+    translated = 0
+    skipped = 0
+
+    # Process each component directory
+    for component_dir in base_path.iterdir():
+        if not component_dir.is_dir() or component_dir.name in ["ai_hub", "translation_localizer"]:
+            continue
+
+        try:
+            result = translate_component(component_dir, api_key)
+            if result == "translated":
+                translated += 1
+            else:
+                skipped += 1
+        except Exception as e:
+            _LOGGER.error(f"Error processing {component_dir.name}: {e}")
+
+    return {
+        "translated": translated,
+        "skipped": skipped,
+        "total": translated + skipped
+    }
+
+
+def translate_component(component_dir: Path, api_key: str) -> str:
+    """Translate a single component."""
+    translations_dir = component_dir / "translations"
+    en_file = translations_dir / "en.json"
+    zh_file = translations_dir / "zh-Hans.json"
+
+    # Check if translation is needed
+    if not translations_dir.exists() or not en_file.exists():
+        return "skipped"
+
+    if zh_file.exists():
+        return "skipped"
+
+    _LOGGER.info(f"Translating {component_dir.name}")
+
+    try:
+        # Load English translations
+        with open(en_file, 'r', encoding='utf-8') as f:
+            en_data = json.load(f)
+
+        # Translate the data
+        zh_data = translate_json_values(en_data, api_key)
+
+        # Save Chinese translations
+        with open(zh_file, 'w', encoding='utf-8') as f:
+            json.dump(zh_data, f, ensure_ascii=False, indent=2)
+
+        _LOGGER.info(f"Successfully translated {component_dir.name}")
+        return "translated"
+
+    except Exception as e:
+        _LOGGER.error(f"Failed to translate {component_dir.name}: {e}")
+        return "error"
+
+
+def translate_json_values(data: any, api_key: str) -> any:
+    """Recursively translate JSON values."""
+    if isinstance(data, dict):
+        return {key: translate_json_values(value, api_key) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [translate_json_values(item, api_key) for item in data]
+    elif isinstance(data, str) and data.strip():
+        # Translate strings
+        return translate_text(data, api_key)
+    else:
+        return data
+
+
+def translate_text(text: str, api_key: str) -> str:
+    """Translate text using Zhipu AI while preserving placeholders."""
+    if not text or len(text.strip()) < 2:
+        return text
+
+    # Skip placeholders and code - use regex to find placeholder patterns
+    # Pattern to match {placeholder}, %placeholder, ${placeholder}, etc.
+    placeholder_pattern = r'\{[^}]+\}|%\w+|\$\{[^}]+\}'
+
+    # Check if text is primarily a placeholder
+    if re.fullmatch(placeholder_pattern, text.strip()):
+        return text
+
+    # Check if text starts with placeholder patterns
+    if text.startswith(("{", "%", "${")) or text.isupper():
+        return text
+
+    # Find all placeholders in the text
+    placeholders = re.findall(placeholder_pattern, text)
+
+    if not placeholders:
+        # No placeholders, translate directly
+        return _translate_simple_text(text, api_key)
+
+    # Extract placeholders and replace them with temporary markers
+    placeholder_map = {}
+    temp_text = text
+    for i, placeholder in enumerate(placeholders):
+        marker = f"__PLACEHOLDER_{i}__"
+        placeholder_map[marker] = placeholder
+        temp_text = temp_text.replace(placeholder, marker, 1)
+
+    # Translate the text with placeholders removed
+    translated_temp = _translate_simple_text(temp_text, api_key)
+
+    # Restore the original placeholders
+    translated_text = translated_temp
+    for marker, placeholder in placeholder_map.items():
+        translated_text = translated_text.replace(marker, placeholder)
+
+    return translated_text
+
+
+def _translate_simple_text(text: str, api_key: str) -> str:
+    """Simple translation function for text without placeholders."""
+    url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "glm-4-flash-250414",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Translate English to Chinese. Return only the translation, no explanation."
+            },
+            {
+                "role": "user",
+                "content": text
+            }
+        ],
+        "temperature": 0.3,
+        "max_tokens": 2048
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+
+        result = response.json()
+        translated = result["choices"][0]["message"]["content"].strip()
+
+        _LOGGER.debug(f"Translated: {text} -> {translated}")
+        return translated
+
+    except Exception as e:
+        _LOGGER.error(f"Translation failed for '{text}': {e}")
+        return text  # Return original on failure

@@ -3,10 +3,11 @@
     "step": {
       "user": {
         "title": "连接到AI Hub",
-        "description": "输入您的智谱AI API密钥（必需）和硅基流动API密钥（可选，用于语音识别功能）。智谱AI密钥可以在[这里]({api_key_url})获取，硅基流动密钥请在硅基流动官网获取。",
+        "description": "配置您的AI Hub集成。所有API密钥都是可选的，可以根据需要逐步配置。智谱AI密钥可以在[这里]({api_key_url})获取，硅基流动密钥请在硅基流动官网获取，巴法云UID请在巴法云官网获取。",
         "data": {
-          "api_key": "智谱AI API密钥",
-          "siliconflow_api_key": "硅基流动API密钥（可选，用于语音识别）"
+          "api_key": "智谱AI API密钥（可选）",
+          "siliconflow_api_key": "硅基流动API密钥（可选，用于语音识别）",
+          "bemfa_uid": "巴法云UID（可选，用于微信通知）"
         }
       }
     },
@@ -23,11 +24,11 @@
     "step": {
       "init": {
         "title": "配置选项",
-        "description": "请在集成详情页面中找到对应的子条目（对话助手或AI任务），点击子条目右侧的配置按钮来修改设置。\n\n在集成页面点击「AI Hub」，进入详情页后，您会看到已配置的子条目列表，每个子条目都可以单独配置。"
+        "description": "您可以在集成详情页面中找到对应的子条目，点击子条目右侧的配置按钮来修改设置。\n\n支持的子条目类型：对话助手、AI任务、Edge TTS语音、Silicon Flow ASR、微信通知、组件翻译。\n\n每个子条目都可以独立配置和管理。"
       }
     },
     "abort": {
-      "configure_via_subentries": "请通过子条目配置对话助手和AI任务。在设备页面中找到对应的子条目进行配置。"
+      "configure_via_subentries": "请通过子条目配置各种功能。在集成详情页面中找到对应的子条目进行配置。"
     }
   },
   "config_subentries": {
@@ -144,6 +145,50 @@
           }
         }
       }
+    },
+    "wechat": {
+      "initiate_flow": {
+        "user": "添加微信通知",
+        "reconfigure": "重新配置微信通知"
+      },
+      "entry_type": "AI Hub 微信通知",
+      "step": {
+        "init": {
+          "title": "配置微信通知",
+          "description": "配置巴法云微信通知功能。开启推荐模式将使用最佳配置。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "bemfa_uid": "巴法云UID"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "bemfa_uid": "巴法云提供的用户ID，用于发送微信消息"
+          }
+        }
+      }
+    },
+    "translation": {
+      "initiate_flow": {
+        "user": "添加集成汉化",
+        "reconfigure": "重新配置集成汉化"
+      },
+      "entry_type": "AI Hub 集成汉化",
+      "step": {
+        "init": {
+          "title": "配置集成汉化",
+          "description": "配置集成汉化功能。使用智谱AI将英文翻译文件自动翻译为中文。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式（使用最佳配置）",
+            "custom_components_path": "自定义组件路径"
+          },
+          "data_description": {
+            "recommended": "启用后将使用推荐的配置参数",
+            "custom_components_path": "自定义组件目录的路径，默认为custom_components"
+          }
+        }
+      }
     }
   },
   "services": {
@@ -240,6 +285,38 @@
         "model": {
           "name": "ASR模型",
           "description": "使用的语音识别模型：FunAudioLLM/SenseVoiceSmall（推荐）或TeleAI/TeleSpeechASR"
+        }
+      }
+    },
+    "send_wechat_message": {
+      "name": "发送微信消息",
+      "description": "通过巴法云发送微信消息通知",
+      "fields": {
+        "device_entity": {
+          "name": "设备实体",
+          "description": "要监控状态的实体ID"
+        },
+        "message": {
+          "name": "消息内容",
+          "description": "要发送的消息内容"
+        },
+        "group": {
+          "name": "消息分组",
+          "description": "消息分组标识，默认为default"
+        },
+        "url": {
+          "name": "链接地址",
+          "description": "可选的链接地址"
+        }
+      }
+    },
+    "translate_components": {
+      "name": "集成汉化",
+      "description": "汉化所有自定义集成的英文翻译为中文",
+      "fields": {
+        "custom_components_path": {
+          "name": "集成路径",
+          "description": "自定义集成目录路径，默认为custom_components"
         }
       }
     }

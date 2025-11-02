@@ -683,14 +683,18 @@ DEFAULT_TTS_NAME: Final = "AI Hub TTS语音"
 DEFAULT_TTS_NAME_EN: Final = "AI Hub TTS"
 DEFAULT_STT_NAME: Final = "AI Hub STT语音"
 DEFAULT_STT_NAME_EN: Final = "AI Hub STT"
+DEFAULT_WECHAT_NAME: Final = "AI Hub 微信通知"
+DEFAULT_WECHAT_NAME_EN: Final = "AI Hub WeChat"
+DEFAULT_TRANSLATION_NAME: Final = "AI Hub 集成汉化"
+DEFAULT_TRANSLATION_NAME_EN: Final = "AI Hub Integration Localization"
 DEFAULT_CONVERSATION_NAME_EN: Final = "AI Hub Assistant"
 DEFAULT_AI_TASK_NAME_EN: Final = "AI Hub Task"
 
-# Services
-SERVICE_GENERATE_IMAGE: Final = "generate_image"
-SERVICE_ANALYZE_IMAGE: Final = "analyze_image"
-SERVICE_TTS_SPEECH: Final = "tts_speech"
-SERVICE_STT_TRANSCRIBE: Final = "stt_transcribe"
+# Configuration Keys
+CONF_API_KEY: Final = "api_key"
+CONF_SILICONFLOW_API_KEY: Final = "siliconflow_api_key"
+CONF_BEMFA_UID: Final = "bemfa_uid"
+CONF_CUSTOM_COMPONENTS_PATH: Final = "custom_components_path"
 
 # Error Messages
 ERROR_GETTING_RESPONSE: Final = "获取响应时出错"
@@ -742,3 +746,26 @@ RECOMMENDED_STT_OPTIONS: Final = {
     CONF_RECOMMENDED: True,
     CONF_STT_MODEL: STT_DEFAULT_MODEL,
 }
+
+# Recommended Options for WeChat (simplified)
+RECOMMENDED_WECHAT_OPTIONS: Final = {
+    CONF_RECOMMENDED: True,
+    CONF_BEMFA_UID: "",
+}
+
+# Recommended Options for Translation (simplified)
+RECOMMENDED_TRANSLATION_OPTIONS: Final = {
+    CONF_RECOMMENDED: True,
+    CONF_CUSTOM_COMPONENTS_PATH: "custom_components",
+}
+
+# Services
+SERVICE_GENERATE_IMAGE: Final = "generate_image"
+SERVICE_ANALYZE_IMAGE: Final = "analyze_image"
+SERVICE_TTS_SPEECH: Final = "tts_speech"
+SERVICE_STT_TRANSCRIBE: Final = "stt_transcribe"
+SERVICE_SEND_WECHAT_MESSAGE: Final = "send_wechat_message"
+SERVICE_TRANSLATE_COMPONENTS: Final = "translate_components"
+
+# Bemfa WeChat Configuration
+BEMFA_API_URL: Final = "https://apis.bemfa.com/vb/wechat/v1/wechatAlertJson"

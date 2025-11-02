@@ -1,6 +1,6 @@
 generate_image:
   name: 生成图像
-  description: 使用智谱AI CogView模型生成图像
+  description: 使用智谱AI CogView模型生成图像（需要智谱API密钥）
   fields:
     prompt:
       name: 提示词
@@ -37,7 +37,7 @@ generate_image:
 
 analyze_image:
   name: 分析图像
-  description: 使用智谱AI分析图像内容
+  description: 使用智谱AI分析图像内容（需要智谱API密钥）
   fields:
     image_file:
       name: 图像文件
@@ -161,7 +161,7 @@ create_dashboard:
 
 tts_speech:
   name: 文本转语音
-  description: 使用智谱AI将文本转换为语音
+  description: 使用智谱AI将文本转换为语音（需要智谱API密钥）
   fields:
     text:
       name: 文本内容
@@ -234,3 +234,68 @@ tts_speech:
       selector:
         entity:
           domain: media_player
+
+send_wechat_message:
+  name: 发送微信消息
+  description: 通过巴法云发送微信消息通知（需要Bemfa UID）
+  fields:
+    device_entity:
+      name: 设备实体
+      description: 要监控状态的实体ID
+      required: true
+      selector:
+        entity:
+    message:
+      name: 消息内容
+      description: 要发送的消息内容
+      required: true
+      selector:
+        text:
+          multiline: true
+    group:
+      name: 消息分组
+      description: 消息分组标识
+      required: false
+      default: "default"
+      selector:
+        text:
+    url:
+      name: 链接地址
+      description: 可选的链接地址
+      required: false
+      default: ""
+      selector:
+        text:
+
+translate_components:
+  name: 翻译组件
+  description: 翻译所有自定义组件的英文翻译为中文（需要智谱API密钥）
+  fields:
+    custom_components_path:
+      name: 组件路径
+      description: 自定义组件目录路径
+      required: false
+      default: "custom_components"
+      selector:
+        text:
+
+stt_transcribe:
+  name: 语音转文本
+  description: 使用SiliconFlow将语音文件转换为文本（需要Silicon Flow API密钥）
+  fields:
+    file:
+      name: 音频文件
+      description: 要转录的音频文件路径
+      required: true
+      selector:
+        text:
+    model:
+      name: 模型
+      description: 使用的STT模型
+      required: false
+      default: "FunAudioLLM/SenseVoiceSmall"
+      selector:
+        select:
+          options:
+            - "FunAudioLLM/SenseVoiceSmall"
+            - "TeleAI/TeleSpeechASR"
