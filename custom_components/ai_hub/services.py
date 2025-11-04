@@ -35,6 +35,8 @@ from .const import (
     CONF_STT_FILE,
     CONF_TEMPERATURE,
     CONF_CUSTOM_COMPONENTS_PATH,
+    CONF_FORCE_TRANSLATION,
+    CONF_TARGET_COMPONENT,
     DEFAULT_REQUEST_TIMEOUT,
     DOMAIN,
     EDGE_TTS_VOICES,
@@ -105,7 +107,9 @@ WECHAT_SCHEMA = {
 
 # Schema for translation service
 TRANSLATION_SCHEMA = {
-    vol.Optional("custom_components_path", default="custom_components"): cv.string,
+    vol.Optional("list_components", default=False): cv.boolean,
+    vol.Optional("target_component", default=""): cv.string,
+    vol.Optional("force_translation", default=False): cv.boolean,
 }
 
 
@@ -683,22 +687,32 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
         """Handle translation service call."""
         try:
             # Get parameters
-            custom_components_path = call.data.get("custom_components_path", "custom_components")
+            list_components = call.data.get("list_components", False)
+            target_component = call.data.get("target_component", "").strip()
+            force_translation = call.data.get("force_translation", False)
 
-            # Check if Zhipu API key is available
-            if not has_zhipu_api_key():
-                return {
-                    "success": False,
-                    "error": "智谱AI API密钥未配置，请先配置AI Hub集成"
-                }
+            # 仅列出模式不需要API密钥
+            if not list_components:
+                # Check if Zhipu API key is available
+                if not has_zhipu_api_key():
+                    return {
+                        "success": False,
+                        "error": "智谱AI API密钥未配置，请先配置AI Hub集成"
+                    }
 
-            _LOGGER.info("开始组件翻译...")
+            if list_components:
+                _LOGGER.info("列出已安装的集成...")
+            else:
+                _LOGGER.info("开始组件翻译...")
 
-            # Run translation in background thread
+            # Run in background thread (use default path "custom_components")
             result = await hass.async_add_executor_job(
                 translate_all_components,
-                custom_components_path,
-                api_key
+                "custom_components",
+                api_key if not list_components else None,
+                force_translation,
+                target_component,
+                list_components
             )
 
             return {
@@ -886,8 +900,8 @@ async def _handle_stream_response(hass: HomeAssistant, response: aiohttp.ClientR
 
 
 # Translation functionality (adapted from translation_localizer)
-def translate_all_components(custom_components_path: str, api_key: str) -> dict:
-    """Translate all components in the custom_components directory."""
+def translate_all_components(custom_components_path: str, api_key: str, force_translation: bool = False, target_component: str = "", list_components: bool = False) -> dict:
+    """Translate or list components in the custom_components directory."""
     # Find the custom components directory
     base_path = None
 
@@ -912,31 +926,98 @@ def translate_all_components(custom_components_path: str, api_key: str) -> dict:
 
     _LOGGER.info(f"Scanning components in: {base_path}")
 
+    # 如果是仅列出模式，扫描所有组件并返回信息
+    if list_components:
+        all_components = []
+        available_translations = []  # 有中文翻译的组件
+
+        for component_dir in base_path.iterdir():
+            if not component_dir.is_dir() or component_dir.name in ["ai_hub", "translation_localizer"]:
+                continue
+
+            component_info = {
+                "name": component_dir.name,
+                "has_translation": False,
+                "has_english": False
+            }
+
+            translations_dir = component_dir / "translations"
+            en_file = translations_dir / "en.json"
+            zh_file = translations_dir / "zh-Hans.json"
+
+            if en_file.exists():
+                component_info["has_english"] = True
+                all_components.append(component_dir.name)
+
+                if zh_file.exists():
+                    component_info["has_translation"] = True
+                    available_translations.append(component_dir.name)
+            else:
+                # 没有英文文件但也算已安装的组件
+                all_components.append(component_dir.name)
+
+        _LOGGER.info(f"Found {len(all_components)} components, {len(available_translations)} have translations")
+
+        return {
+            "mode": "list_only",
+            "total_components": len(all_components),
+            "available_translations": len(available_translations),
+            "all_components": sorted(all_components),
+            "components_with_translations": sorted(available_translations),
+            "target_component": target_component
+        }
+
+    # 翻译模式
     translated = 0
     skipped = 0
+    translated_components = []  # 记录具体翻译的组件
+    skipped_components = []     # 记录跳过的组件
 
-    # Process each component directory
-    for component_dir in base_path.iterdir():
-        if not component_dir.is_dir() or component_dir.name in ["ai_hub", "translation_localizer"]:
-            continue
+    # 如果指定了目标组件，只处理该组件
+    if target_component:
+        target_dir = base_path / target_component
+        if not target_dir.exists() or not target_dir.is_dir():
+            return {
+                "translated": 0,
+                "skipped": 0,
+                "error": f"Target component not found: {target_component}"
+            }
 
+        component_dirs = [target_dir]
+        _LOGGER.info(f"Processing specific component: {target_component}")
+    else:
+        # 处理所有组件目录
+        component_dirs = [d for d in base_path.iterdir() if d.is_dir() and d.name not in ["ai_hub", "translation_localizer"]]
+        _LOGGER.info(f"Processing all components ({len(component_dirs)} found)")
+
+    for component_dir in component_dirs:
         try:
-            result = translate_component(component_dir, api_key)
+            result = translate_component(component_dir, api_key, force_translation)
             if result == "translated":
                 translated += 1
+                translated_components.append(component_dir.name)
+                _LOGGER.info(f"✓ Successfully translated {component_dir.name}")
             else:
                 skipped += 1
+                skipped_components.append(component_dir.name)
+                _LOGGER.info(f"- Skipped {component_dir.name} ({result})")
         except Exception as e:
             _LOGGER.error(f"Error processing {component_dir.name}: {e}")
+            skipped += 1
+            skipped_components.append(f"{component_dir.name} (error: {str(e)})")
 
     return {
+        "mode": "translate",
         "translated": translated,
         "skipped": skipped,
-        "total": translated + skipped
+        "total": translated + skipped,
+        "translated_components": translated_components,
+        "skipped_components": skipped_components,
+        "target_component": target_component
     }
 
 
-def translate_component(component_dir: Path, api_key: str) -> str:
+def translate_component(component_dir: Path, api_key: str, force_translation: bool = False) -> str:
     """Translate a single component."""
     translations_dir = component_dir / "translations"
     en_file = translations_dir / "en.json"
@@ -946,10 +1027,15 @@ def translate_component(component_dir: Path, api_key: str) -> str:
     if not translations_dir.exists() or not en_file.exists():
         return "skipped"
 
-    if zh_file.exists():
+    # Skip if Chinese translation already exists and not in force mode
+    if zh_file.exists() and not force_translation:
         return "skipped"
 
-    _LOGGER.info(f"Translating {component_dir.name}")
+    # If force mode is enabled and Chinese file exists, we'll re-translate
+    if force_translation and zh_file.exists():
+        _LOGGER.info(f"Force re-translating {component_dir.name} (overwriting existing)")
+    else:
+        _LOGGER.info(f"Translating {component_dir.name}")
 
     try:
         # Load English translations

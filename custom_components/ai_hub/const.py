@@ -695,6 +695,9 @@ CONF_API_KEY: Final = "api_key"
 CONF_SILICONFLOW_API_KEY: Final = "siliconflow_api_key"
 CONF_BEMFA_UID: Final = "bemfa_uid"
 CONF_CUSTOM_COMPONENTS_PATH: Final = "custom_components_path"
+CONF_FORCE_TRANSLATION: Final = "force_translation"
+CONF_TARGET_COMPONENT: Final = "target_component"
+CONF_LIST_COMPONENTS: Final = "list_components"
 
 # Error Messages
 ERROR_GETTING_RESPONSE: Final = "获取响应时出错"
@@ -756,7 +759,9 @@ RECOMMENDED_WECHAT_OPTIONS: Final = {
 # Recommended Options for Translation (simplified)
 RECOMMENDED_TRANSLATION_OPTIONS: Final = {
     CONF_RECOMMENDED: True,
-    CONF_CUSTOM_COMPONENTS_PATH: "custom_components",
+    CONF_FORCE_TRANSLATION: False,
+    CONF_TARGET_COMPONENT: "",
+    CONF_LIST_COMPONENTS: False,
 }
 
 # Services

@@ -36,6 +36,9 @@ from .const import (
     CONF_IMAGE_MODEL,
     CONF_SILICONFLOW_API_KEY,
     CONF_CUSTOM_COMPONENTS_PATH,
+    CONF_FORCE_TRANSLATION,
+    CONF_TARGET_COMPONENT,
+    CONF_LIST_COMPONENTS,
     CONF_LLM_HASS_API,
     CONF_MAX_HISTORY_MESSAGES,
     CONF_MAX_TOKENS,
@@ -88,15 +91,6 @@ from .const import (
     RECOMMENDED_STT_MODEL,
     DEFAULT_STT_NAME,
     CONF_STT_MODEL,
-    TTS_DEFAULT_VOICE,
-    TTS_DEFAULT_LANG,
-    TTS_DEFAULT_RATE,
-    TTS_DEFAULT_VOLUME,
-    TTS_DEFAULT_PITCH,
-    AI_HUB_CHAT_MODELS,
-    AI_HUB_CHAT_URL,
-    AI_HUB_IMAGE_MODELS,
-    EDGE_TTS_VOICES,
     SILICONFLOW_STT_MODELS,
     )
 
@@ -380,10 +374,20 @@ async def ai_hub_config_option_schema(
             # Translation: simple recommended mode with minimal configuration
             schema.update({
                 vol.Optional(
-                    CONF_CUSTOM_COMPONENTS_PATH,
-                    default=options.get(CONF_CUSTOM_COMPONENTS_PATH, "custom_components"),
-                    description={"suggested_value": options.get(CONF_CUSTOM_COMPONENTS_PATH)},
+                    CONF_LIST_COMPONENTS,
+                    default=options.get(CONF_LIST_COMPONENTS, False),
+                    description={"suggested_value": options.get(CONF_LIST_COMPONENTS)},
+                ): bool,
+                vol.Optional(
+                    CONF_TARGET_COMPONENT,
+                    default=options.get(CONF_TARGET_COMPONENT, ""),
+                    description={"suggested_value": options.get(CONF_TARGET_COMPONENT)},
                 ): str,
+                vol.Optional(
+                    CONF_FORCE_TRANSLATION,
+                    default=options.get(CONF_FORCE_TRANSLATION, False),
+                    description={"suggested_value": options.get(CONF_FORCE_TRANSLATION)},
+                ): bool,
             })
         return schema
 
@@ -550,10 +554,20 @@ async def ai_hub_config_option_schema(
     elif subentry_type == "translation":
         schema.update({
             vol.Optional(
-                CONF_CUSTOM_COMPONENTS_PATH,
-                default=options.get(CONF_CUSTOM_COMPONENTS_PATH, "custom_components"),
-                description={"suggested_value": options.get(CONF_CUSTOM_COMPONENTS_PATH)},
+                CONF_LIST_COMPONENTS,
+                default=options.get(CONF_LIST_COMPONENTS, False),
+                description={"suggested_value": options.get(CONF_LIST_COMPONENTS)},
+            ): bool,
+            vol.Optional(
+                CONF_TARGET_COMPONENT,
+                default=options.get(CONF_TARGET_COMPONENT, ""),
+                description={"suggested_value": options.get(CONF_TARGET_COMPONENT)},
             ): str,
+            vol.Optional(
+                CONF_FORCE_TRANSLATION,
+                default=options.get(CONF_FORCE_TRANSLATION, False),
+                description={"suggested_value": options.get(CONF_FORCE_TRANSLATION)},
+            ): bool,
         })
 
     return schema
@@ -648,7 +662,9 @@ class AIHubTranslationFlowHandler(ConfigSubentryFlow):
         return self.async_create_entry(
             title=DEFAULT_TRANSLATION_NAME,
             data={
-                CONF_CUSTOM_COMPONENTS_PATH: "custom_components",
+                CONF_LIST_COMPONENTS: False,
+                CONF_TARGET_COMPONENT: "",
+                CONF_FORCE_TRANSLATION: False,
                 CONF_RECOMMENDED: True,
             }
         )

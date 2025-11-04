@@ -269,15 +269,29 @@ send_wechat_message:
 
 translate_components:
   name: 集成汉化
-  description: 汉化所有自定义集成的英文翻译为中文（需要智谱API密钥）
+  description: 汉化指定的自定义集成的英文翻译为中文（需要智谱API密钥）
   fields:
-    custom_components_path:
-      name: 集成路径
-      description: 自定义集成目录路径
+    list_components:
+      name: 列出已安装集成
+      description: 仅列出已安装的集成及其翻译状态，不执行翻译操作
       required: false
-      default: "custom_components"
+      default: false
+      selector:
+        boolean:
+    target_component:
+      name: 指定集成
+      description: 指定要汉化的集成名称，如"my_component"。留空则汉化所有集成
+      required: false
+      default: ""
       selector:
         text:
+    force_translation:
+      name: 强制汉化
+      description: 无论中文翻译文件是否存在，都强制重新翻译并覆盖现有翻译
+      required: false
+      default: false
+      selector:
+        boolean:
 
 stt_transcribe:
   name: 语音转文本
