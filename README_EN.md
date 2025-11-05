@@ -1,10 +1,9 @@
-<h1 align="center">AI Hub · One-stop Free AI Services</h1>
+<h1 align="center">AI Hub · One-Stop Free AI Services</h1>
 <p align="center">
-  To let you experience a variety of free AI services, this integration does not support any paid models or services. Of course, you may need to create accounts or generate API Keys.<br>
-  <strong>Special Thanks:</strong> "We enjoy the shade of trees planted by our predecessors". Without <a href="https://github.com/knoop7" target="_blank">knoop7</a> and <a href="https://github.com/hasscc/hass-edge-tts" target="_blank">hasscc/hass-edge-tts</a>, this integration would not exist. Thank you!
+  To let you enjoy various free AI services, this integration does not support any paid models or services. You may need to register an account or create an API Key.<br>
+  <strong>Special Thanks:</strong> We stand on the shoulders of giants. Without the projects <a href="https://github.com/knoop7" target="_blank">knoop7</a> and <a href="https://github.com/hasscc/hass-edge-tts" target="_blank">hasscc/hass-edge-tts</a>, this integration would not exist. Thank you!
 </p>
 
-</p>
 <p align="center">
   <a href="https://github.com/ha-china/ai_hub/releases"><img src="https://img.shields.io/github/v/release/ha-china/ai_hub" alt="GitHub Version"></a>
   <a href="https://github.com/ha-china/ai_hub/issues"><img src="https://img.shields.io/github/issues/ha-china/ai_hub" alt="GitHub Issues"></a>
@@ -13,193 +12,555 @@
 </p>
 
 ---
-## Prerequisites
-- Home Assistant 2025.8.0 or later
-- HACS 4.0 or later (recommended)
-- You will need the appropriate API Keys to use the respective services; if you don't have them, please register using the following links:
-- Zhipu API Key (for Conversation, AI Task, TTS, STT) [Register](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)
-- SiliconFlow API Key (for Speech Recognition) [Register](https://cloud.siliconflow.cn/i/U3e0rmsr)
-- Bemfa (for WeChat Message Push) [Register](http://www.cloud.bemfa.com/u_register.php)
 
-AI Hub is a custom integration for Home Assistant, offering native connections to Zhipu, SiliconFlow, and Bemfa:
-- Conversation: Works as an Assist conversation agent, supports streaming replies, home control tool calling, and image understanding.
-- AI Task: Generate structured data and images (CogView series).
-- Text-to-Speech (TTS): Integrated with Edge TTS, supporting high-quality speech synthesis (multi-voice, multi-style, multi-parameter).
-- Speech-to-Text (STT): Integrated with SiliconFlow speech recognition, providing fast and accurate speech-to-text.
-  > Free models do not support streaming, so speed may be average unless your local machine cannot handle it or you do not want to use paid models.
-- Integrated Services: Image analysis, image generation, TTS playback, STT transcription.
-- HACS Integration Localization: Automatically translates the custom integration's en.json to Chinese using Zhipu AI.
-  > If zh-Hans.json already exists in the integration, it will not auto-translate, even if its contents are in English.
-- WeChat Message Push: Integrates Bemfa service to send device status notifications via WeChat.
-  > Note: This integration fully depends on the internet, so your network and device performance will determine the experience.
-## Features
+## 📋 Table of Contents
 
-### Conversation
-- Streaming output: Real-time display of model responses.
-- Home control: Connected to Home Assistant LLM API, allowing models to call tools for control and query.
-- Image understanding: When a message contains an image, the visual model is used automatically (priority to free and powerful GLM-4.1V-Thinking).
-- Context memory: Number of history messages is configurable to balance effect and performance.
-- Optional web search: Advanced mode can enable the web_search tool.
+- [Prerequisites](#prerequisites)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Account Registration and Token Acquisition](#account-registration-and-token-acquisition)
+- [User Guide](#user-guide)
+- [Service API Reference](#service-api-reference)
+- [Configuration](#configuration)
+- [Notes](#notes)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-### AI Task
-- Structured data generation: Specify a JSON structure (error provided on failure).
-- Image generation: Uses images/generations, supports URL or base64 output, standardized as PNG.
-- Attachment support: Reuses the conversation message format for multimodal tasks.
+---
 
-### Text-to-Speech (TTS, Edge TTS)
-- Integrated Edge TTS, supporting multiple languages, styles, and voice types.
-- Rich voice models (Xiaoxiao, Yunyang, Yunjian, Aria, Jenny, Guy, etc.).
-- Adjustable speed, volume, pitch, and style.
-- Supports streaming and non-streaming: either segmented or full audio returned.
-- Default output is WAV (supports PCM/MP3/OGG and other Edge TTS formats).
+## 🔧 Prerequisites
 
-### Speech-to-Text (STT, SiliconFlow)
-- Integrates high-compatibility SiliconFlow speech recognition service.
-- Supports uploading WAV files (16k/16bit mono recommended, automatically standardized).
-- Supports mainstream languages like Mandarin/English, auto-detected.
-- Non-streaming recognition supported.
-- Suitable for real-time voice control, automation, and more.
+- **Home Assistant**: Version 2025.8.0 or above
+- **HACS**: Version 4.0 or above (recommended)
+- **Network Requirement**: This integration fully depends on Internet services, a stable network connection is required
 
-### HACS Integration Localization
-- Automatically translates the en.json of custom integrations to Chinese, improving user experience.
-- High-quality translation with Zhipu AI, batch processing of multiple components.
-- Allows custom component directory path configuration for flexible installations.
+## 🌟 Features
 
-### WeChat Message Push (Wechat, Bemfa)
-- Integrates Bemfa to send device status notifications via WeChat.
-- Supports sending text and image messages for diverse notification needs.
-- Easy configuration; just obtain your Bemfa device topic.
+AI Hub is a custom integration for Home Assistant, providing native integration with Zhipu AI, SiliconFlow, and Bemfa:
 
-### Configuration & Management
-- Recommended/Advanced dual modes: Default recommended parameters for plug-and-play; advanced mode exposes model selection and tuning.
-- Subentries: Manage Conversation / AI Task / TTS / STT / WeChat Message Push services under one integration.
+### Core Functions
 
-## Installation
+#### 🗣️ Conversation Assistant
+- **Streaming Output**: Real-time model responses for a smooth conversational experience
+- **Home Control**: Connects to Home Assistant LLM API, supports controlling/querying devices
+- **Image Understanding**: Automatically switches to a visual model (GLM-4.1V-Thinking) when a message contains an image
+- **Context Memory**: Configurable number of history messages to balance effect and performance
+- **Web Search**: Enable web_search tool in advanced mode
 
-### Method 1: HACS (Recommended)
-1. Search and install "ai_hub" in HACS.
-2. Restart Home Assistant.
+#### 🤖 AI Tasks
+- **Structured Data Generation**: Specify JSON structure, error feedback if failed
+- **Image Generation**: Use CogView series models, supports URL or base64 result
+- **Multimodal Support**: Reuses conversation format, making complex tasks easier
+
+#### 🔊 Text-to-Speech (TTS, Edge TTS)
+- **High-Quality Speech**: Integrates Microsoft Edge TTS, supports multiple languages and styles
+- **Rich Voice Library**: Supports voices like Xiaoxiao, YunJian, Aria, Jenny, etc.
+- **Parameter Tuning**: Supports speed/volume/pitch/style adjustments
+- **Multiple Formats**: Outputs audio in WAV/MP3/OGG and more
+
+#### 🎤 Speech-to-Text (STT, SiliconFlow)
+- **High-Accuracy Recognition**: Integrates SiliconFlow speech recognition services
+- **Multi-language Support**: Automatically detects Chinese, English, and more
+- **Format Compatibility**: Supports WAV/MP3/FLAC and other audio formats
+- **Real-Time Processing**: Suitable for voice control and automations
+
+#### 🌐 HACS Integration Translation
+- **Auto Translate**: Uses ZhipuAI to translate custom component English translation files to Chinese
+- **Batch Processing**: Supports batch translation for multiple components
+- **Smart Recognition**: Automatically identifies components that need translation and skips those with existing Chinese translations
+
+#### 📱 WeChat Message Push (Bemfa)
+- **Real-Time Notification**: Integrates Bemfa service to send device state notifications via WeChat
+- **Multimedia Support**: Supports sending text and image messages
+- **Simple Configuration**: Just acquire the Bemfa device topic to use
+
+---
+
+## 📦 Installation
+
+### Method 1: HACS Installation (Recommended)
+
+1. **Open HACS**: In Home Assistant, go to HACS → Integrations
+2. **Search Integration**: Click "Explore & Download repositories" at the top right, search for "ai_hub"
+3. **Install Integration**: Find "AI Hub" and click download
+4. **Restart HA**: Restart Home Assistant for the integration to take effect
 
 ### Method 2: Manual Installation
-1. Copy the `custom_components/ai_hub` directory from the repository to your Home Assistant `custom_components/` directory.
-2. Restart Home Assistant.
 
-Note: This integration depends on the new Conversation/AI Task/Subentry framework; a newer version of Home Assistant (>2025.8.0) is recommended.
+1. **Download Files**: Download the latest `ai_hub.zip` from [GitHub Releases](https://github.com/ha-china/ai_hub/releases)
+2. **Extract Files**: Extract the zip to `<HA_CONFIG>/custom_components/ai_hub/`
+3. **Restart HA**: Restart Home Assistant
 
-## Quick Start (Configuration Wizard)
-1. Go to Settings → Devices & Services → Integrations → Add Integration, and search for "AI HUB (ai_hub)".
-2. Enter your Zhipu API Key as guided ([get it here](https://open.bigmodel.cn/usercenter/apikeys)).
-3. Enter your SiliconFlow API Key as guided.
-4. Enter your Bemfa device topic as guided ([get it here](https://cloud.bemfa.com/tcp/index.html)).
-5. Edge TTS does not require a separate API Key; it uses the official Microsoft free interface.
-6. To adjust parameters, click "Configure" in the relevant subentry to enter recommended/advanced configuration.
+> **Note**: This integration relies on the new Conversation/AI Task/Child Item framework. We recommend using a new version of Home Assistant (2025.8.0 or newer).
 
-## User Guide
+---
 
-### A. Conversation (Assist Conversation Agent)
-- In the Assist conversation page, set the agent to "AI HUB Conversation Assistant".
-- Example commands: "Turn on the living room light to 60%", "Summarize today's schedule".
-- Attach an image: Upload or reference an image in the supported frontend, and the model will automatically analyze and reply.
-- Tool calls: After enabling LLM Hass API in the subentry, models can use Home Assistant tools to control devices/query status.
+## 🚀 Quick Start
 
-### B. AI Task (Structured Data)
-- In cards or automations, call AI Task to generate data:
-  - Text → structured JSON: Define the structure, and the system will attempt to parse the reply as JSON.
-  - On failure, errors are returned to help with tuning or retry.
+### Configuration Wizard
 
-### C. AI Task (Image Generation)
-- Use the `ai_hub.generate_image` service to generate images (CogView):
+1. **Add Integration**: Go to Settings → Devices & Services → Integrations → Add Integration, search "AI HUB"
+2. **Configure API Keys**: Setup the following services as prompted by the wizard:
+   - Zhipu API Key (for Conversation, AI Task, TTS, STT)
+   - SiliconFlow API Key (for Speech Recognition)
+   - Bemfa API Key (for WeChat notifications)
+3. **Validate Configuration**: The system will automatically validate the API Keys
+4. **Finish Setup**: After configuration, relevant services and entities will be created automatically
 
-### D. Service Calls
+### Child Entry Configuration
 
-AI Hub provides various services accessible via Developer Tools > Services:
+AI Hub supports multiple "child entries" for independent function configurations:
 
-#### Image Generation (`ai_hub.generate_image`)
-- **Description**: Use Zhipu AI CogView model to generate an image
-- **Parameters**: 
-  - `prompt`: image description (required)
-  - `size`: image size (optional, default 1024x1024)
-  - `model`: model selection (optional, default cogview-3-flash)
+- **AI Hub Conversation Assistant**: For Assist conversation agent
+- **AI Hub AI Tasks**: For image generation and structured data
+- **AI Hub TTS Voice**: For text-to-speech
+- **AI Hub STT Voice**: For speech-to-text
+- **AI Hub WeChat Notification**: For WeChat message push
+- **AI Hub Integration Translation**: For component translation
 
-#### Image Analysis (`ai_hub.analyze_image`)
-- **Description**: Use AI HUB to analyze image content
-- **Parameters**:
-  - `image_file`: image file path
-  - `image_entity`: camera entity ID
-  - `message`: analysis instruction (required)
-  - `model`: model selection (optional)
-  - `temperature`: temperature (optional)
-  - `max_tokens`: max tokens (optional)
+---
 
-#### Text-to-Speech (`ai_hub.tts_speech`)
-- **Description**: Use Zhipu to convert text to speech
-- **Parameters**:
-  - `text`: text content (required)
-  - `voice`: voice type (optional, female/male)
-  - `speed`: speed (optional)
-  - `volume`: volume (optional)
-  - `media_player_entity`: media player entity ID (optional)
+## 🔑 Account Registration and Token Acquisition
 
-#### Speech-to-Text (`ai_hub.stt_transcribe`)
-- **Description**: Use SiliconFlow to convert audio to text
-- **Parameters**:
-  - `file`: audio file path (required)
-  - `model`: STT model selection (optional)
+### Zhipu AI
+- **Purpose**: Conversation assistant, AI tasks, TTS, STT
+- **Registration Link**: [https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)
+- **Getting API Key**:
+  1. Register and log in
+  2. Go to the [Console](https://open.bigmodel.cn/usercenter/apikeys)
+  3. Click "Create API Key"
+  4. Copy the generated API Key
 
-#### Create Automation (`ai_hub.create_automation`)
-- **Description**: Create a Home Assistant automation via natural language
-- **Parameters**:
-  - `description`: automation description (required)
-  - `name`: automation name (optional)
-  - `area_id`: area ID (optional)
+### SiliconFlow
+- **Purpose**: Speech recognition
+- **Registration Link**: [https://cloud.siliconflow.cn/i/U3e0rmsr](https://cloud.siliconflow.cn/i/U3e0rmsr)
+- **Getting API Key**:
+  1. Register and log in
+  2. Go to the console
+  3. Create a new API Key in the API Management page
+  4. Copy the generated API Key
 
-#### Translate Components (`ai_hub.translate_components`)
-- **Description**: Translate all custom integration English translations to Chinese
-- **Parameters**:
-  - `custom_components_path`: custom components directory path (optional, default custom_components)
+### Bemfa
+- **Purpose**: WeChat message push
+- **Registration Link**: [http://www.cloud.bemfa.com/u_register.php](http://www.cloud.bemfa.com/u_register.php)
+- **Getting Device Topic**:
+  1. Register and log in
+  2. Go to [TCP Device Management](https://cloud.bemfa.com/tcp/index.html)
+  3. Add a new device or use an existing one
+  4. Copy the device topic
 
-#### Send WeChat Message (`ai_hub.send_wechat_message`)
-- **Description**: Send WeChat notifications via Bemfa
-- **Parameters**:
-  - `device_entity`: entity ID to monitor (required)
-  - `message`: message content (required)
-  - `group`: message group (optional)
-  - `url`: link address (optional)
-  - Parameters: prompt (required), size (default 1024x1024), model (default cogview-3-flash)
-  - Returns: image_url or image_base64 (auto-converted internally to PNG for frontend/card use)
+> **Note**: Edge TTS uses Microsoft's free official API and does not require a separate API Key.
 
-### D. Image Analysis Service (Image Understanding)
-- Use the `ai_hub.analyze_image` service:
-  - Parameters: image_file or image_entity (choose one), message (analysis instructions), model (default glm-4v-flash)
-  - Supports `stream` for incremental streaming results.
+---
 
-### E. Text-to-Speech (TTS Entity & Service, Edge TTS)
-- As a TTS entity, select "Edge TTS" in the frontend and enter text to play.
-- Or call the `ai_hub.tts_speech` service:
-  - Parameters: text, voice (e.g. zh-CN-XiaoxiaoNeural, see Edge voice list for details), rate (speed), volume, pitch, style, format (e.g. audio-16khz-32kbitrate-mono-mp3), stream (streaming)
-  - Non-streaming: full audio returned; streaming: audio fragments returned and automatically concatenated into complete audio.
+## 📖 User Guide
 
-### F. Speech-to-Text (STT Entity & Service, SiliconFlow)
-- As an STT entity: audio collected via frontend/mic will be standardized to WAV and uploaded to SiliconFlow STT.
-- Or call the `ai_hub.stt_transcribe` service:
-  - Parameters: audio_file (WAV), language (default zh), stream.
-  - Returns: recognized text (streaming will append until [DONE]).
+### A. Conversation Assistant
 
-## Parameters and Models (Defaults & Recommendations)
-- Conversation (default):
-  - Model: GLM-4-Flash-250414
-  - temperature: 0.3, top_p: 0.5, top_k: 1, max_tokens: 250, history: 30
-- AI Task (default):
-  - Text model: GLM-4-Flash-250414 (temperature 0.95 / top_p 0.7 / max_tokens 2000)
-  - Image model: cogview-3-flash (size default 1024x1024)
-- Visual model: GLM-4.1V-Thinking (more powerful free model)
-- TTS default: Integrated Edge TTS, recommended voice zh-CN-XiaoxiaoNeural, format audio-16khz-32kbitrate-mono-mp3, rate 1.0, volume 1.0, stream true
-- STT default: SiliconFlow, language zh, stream true
+#### Basic Conversation
+1. **Switch Agent**: In the Assist conversation page, set the agent to "AI Hub Conversation Assistant"
+2. **Start Chatting**: Enter or say what you need, such as:
+   - "Turn on the living room light to 60%"
+   - "Summarize my schedule for today"
+   - "Set an alarm for 8am tomorrow"
 
-## Contributing
-Issues and PRs are welcome to improve features and documentation:
-- Code & Docs: https://github.com/ha-china/ai_hub
-- Issue Tracker: https://github.com/ha-china/ai_hub/issues
+#### Image Understanding
+1. **Upload Image**: Upload an image or use a camera image in the supported frontend
+2. **Describe Issue**: Enter your question or description related to the image
+3. **Get Analysis**: The model will analyze and respond automatically
 
-## License
-This project is released under the LICENSE file in the repository.
+#### Tool Usage
+- **Enable Tools**: In conversation assistant child entry, enable "LLM Hass API"
+- **Control Device**: Model can call Home Assistant's tools to control/query devices
+
+### B. AI Tasks
+
+#### Image Generation
+Generate an image via automation or service call:
+
+```yaml
+automation:
+  - alias: "Generate Daily Image"
+    trigger:
+      - platform: time
+        at: "08:00:00"
+    action:
+      - service: ai_hub.generate_image
+        data:
+          prompt: "Beautiful sunrise landscape"
+          size: "1024x1024"
+          model: "cogview-3-flash"
+```
+
+#### Structured Data Generation
+Generate structured data in a specified format:
+
+```yaml
+# Call AI task to generate JSON data
+service: ai_hub.ai_task
+data:
+  input: "Generate a JSON with name, age, and profession"
+  model: "GLM-4-Flash-250414"
+  temperature: 0.3
+```
+
+### C. TTS (Text-to-Speech)
+
+#### Entity Method
+1. **Select TTS**: Select "AI Hub TTS Voice" in the media player
+2. **Enter Text**: Enter text to synthesize
+3. **Play Voice**: The system will play the synthesized voice automatically
+
+#### Service Call Method
+```yaml
+service: ai_hub.tts_speech
+data:
+  text: "Welcome to using AI Hub text-to-speech service"
+  voice: "zh-CN-XiaoxiaoNeural"
+  rate: "+0%"
+  volume: "+0%"
+  media_player_entity: media_player.living_room_speaker
+```
+
+### D. STT (Speech-to-Text)
+
+#### Entity Method
+1. **Select STT**: Choose "AI Hub STT Voice" in microphone settings
+2. **Start Recording**: Tap the record button to start speech input
+3. **Get Text**: System will convert speech to text automatically
+
+#### Service Call Method
+```yaml
+service: ai_hub.stt_transcribe
+data:
+  file: "/config/tmp/recording.wav"
+  model: "FunAudioLLM/SenseVoiceSmall"
+```
+
+### E. WeChat Message Push
+
+#### Automation Push
+```yaml
+automation:
+  - alias: "Door Open Notification"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_door
+        to: "on"
+    action:
+      - service: ai_hub.send_wechat_message
+        data:
+          device_entity: binary_sensor.front_door
+          message: "The front door is open. Please pay attention!"
+```
+
+### F. Integration Translation
+
+#### Manual Translation
+```yaml
+service: ai_hub.translate_components
+data:
+  custom_components_path: "custom_components"  # Optional, default path
+  force_translation: false  # Whether to force re-translation
+```
+
+---
+
+## 🔧 Service API Reference
+
+AI Hub provides a rich set of service interfaces, available via the developer tools services panel:
+
+### Image Generation Service
+```yaml
+service: ai_hub.generate_image
+data:
+  prompt: "Image Description"  # Required: image description
+  size: "1024x1024"  # Optional: image size
+  model: "cogview-3-flash"  # Optional: model name
+```
+
+### Image Analysis Service
+```yaml
+service: ai_hub.analyze_image
+data:
+  image_file: "/path/to/image.jpg"  # Optional: image file path
+  image_entity: "camera.front_door"  # Optional: camera entity ID
+  message: "Analysis instruction"  # Required: analysis description
+  model: "glm-4.1v-thinking-flash"  # Optional: model name
+  temperature: 0.3  # Optional: temperature parameter
+  max_tokens: 1000  # Optional: max tokens
+```
+
+### Text-to-Speech Service
+```yaml
+service: ai_hub.tts_speech
+data:
+  text: "Text to convert"  # Required: text content
+  voice: "zh-CN-XiaoxiaoNeural"  # Optional: voice type
+  speed: 1.0  # Optional: speech speed
+  volume: 1.0  # Optional: volume
+  media_player_entity: "media_player.speaker"  # Optional: player entity
+```
+
+### Speech-to-Text Service
+```yaml
+service: ai_hub.stt_transcribe
+data:
+  file: "/path/to/audio.wav"  # Required: audio file path
+  model: "FunAudioLLM/SenseVoiceSmall"  # Optional: STT model
+```
+
+### Create Automation Service
+```yaml
+service: ai_hub.create_automation
+data:
+  description: "Automation description"  # Required: natural language description
+  name: "Automation name"  # Optional: automation name
+  area_id: "living_room"  # Optional: area id
+```
+
+### WeChat Message Sending Service
+```yaml
+service: ai_hub.send_wechat_message
+data:
+  device_entity: "sensor.door_sensor"  # Required: entity to monitor
+  message: "Message content"  # Required: message
+  group: "Notification group"  # Optional: message group
+  url: "https://example.com"  # Optional: link
+```
+
+### Component Translation Service
+```yaml
+service: ai_hub.translate_components
+data:
+  custom_components_path: "custom_components"  # Optional: custom component path
+  force_translation: false  # Optional: force translation
+  target_component: "custom_component_name"  # Optional: target component
+  list_components: false  # Optional: just list components
+```
+
+---
+
+## ⚙️ Configuration
+
+### Recommended Settings (Defaults)
+
+#### Conversation Assistant
+- **Model**: GLM-4-Flash-250414
+- **Temperature**: 0.3 (controls answer randomness)
+- **Top P**: 0.5 (controls candidate word range)
+- **Top K**: 1 (candidate count limit)
+- **Max Tokens**: 250
+- **Message History**: 30 (for context continuity)
+
+#### AI Task
+- **Text Model**: GLM-4-Flash-250414
+- **Image Model**: cogview-3-flash
+- **Temperature**: 0.95 (higher creativity)
+- **Top P**: 0.7
+- **Max Tokens**: 2000
+
+#### TTS Settings
+- **Default Voice**: zh-CN-XiaoxiaoNeural (Xiaoxiao)
+- **Default Format**: audio-16khz-32kbitrate-mono-mp3
+- **Speed**: 1.0 (normal)
+- **Volume**: 1.0 (normal)
+- **Streaming Output**: enabled
+
+#### STT Settings
+- **Default Model**: FunAudioLLM/SenseVoiceSmall
+- **Supported Languages**: Simplified Chinese, English, Japanese, Korean, and 15+ languages
+- **Audio Formats**: WAV, MP3, FLAC, M4A, OGG, WebM
+- **Max File Size**: 25MB
+
+### Advanced Configuration Options
+
+#### Web Search
+- **Enable Condition**: Enable in conversation assistant advanced mode
+- **Function**: Allows the model to search the web for more accurate answers
+- **Note**: May increase response time
+
+#### Multi-language Voice Support
+AI Hub supports 400+ voices in 60+ languages, including:
+- **Chinese**: Xiaoxiao, Xiaoyi, YunJian, YunXi, YunXia, YunYang (Simplified), Xiaojia, Xiaowen, Yunlong (Traditional), etc.
+- **English**: Jenny, Guy, Aria, Davis, Jane, Jason, etc. (US, UK, AU, etc.)
+- **Others**: Japanese, Korean, French, German, Spanish, Italian, etc.
+
+---
+
+## ⚠️ Notes
+
+### System Requirements
+1. **Network Dependency**: This integration fully depends on Internet services; ensure your network is stable
+2. **Performance**: High-performance devices are recommended for better voice processing experience
+3. **Storage**: Voice files may require temporary storage space
+
+### Usage Limitations
+1. **Free Models**:
+   - No streaming output, responses may be slower
+   - Call frequency limits apply
+   - Free quota is limited
+
+2. **API Keys**:
+   - Keep API Keys safe, do not expose them
+   - Regularly check API usage to avoid overuse
+   - In case of API errors, check if Keys are valid
+
+3. **Function Limitations**:
+   - Some advanced features require newer Home Assistant versions
+   - Image generation/recognition requires a stable network
+   - WeChat push requires following Bemfa's WeChat public account
+
+### Privacy & Security
+1. **Data Transfer**: All data is transmitted to relevant AI services via the Internet
+2. **Local Storage**: Voice files may be temporarily stored locally
+3. **API Security**: Always keep your API Keys safe
+
+---
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+#### 1. Cannot Add Integration
+**Possible Causes**:
+- Home Assistant version is too low (requires 2025.8.0+)
+- Network issues
+- Invalid API Keys
+
+**Solutions**:
+- Check your Home Assistant version
+- Ensure network connection
+- Verify API Keys
+
+#### 2. Conversation Assistant Not Responding
+**Possible Causes**:
+- Zhipu AI API Key invalid or expired
+- Network issues
+- Wrong model selected
+
+**Solutions**:
+- Check your Zhipu AI API Key
+- Test network connection
+- Make sure to use free models
+
+#### 3. TTS Not Playing
+**Possible Causes**:
+- Edge TTS service unavailable
+- Incorrect media player chosen
+- Network issues
+
+**Solutions**:
+- Check connectivity to Microsoft services
+- Confirm media player is working
+- Try a different voice model
+
+#### 4. STT Recognition Fails
+**Possible Causes**:
+- SiliconFlow API Key invalid
+- Unsupported audio file format
+- File is too large
+
+**Solutions**:
+- Check SiliconFlow API Key
+- Use a supported audio format
+- Compress audio file size
+
+#### 5. WeChat Push Not Working
+**Possible Causes**:
+- Bemfa device topic misconfigured
+- Not following Bemfa's WeChat account
+- Network issues
+
+**Solutions**:
+- Check if the device topic is correct
+- Make sure you follow Bemfa's official WeChat account
+- Test your network connection
+
+### Log Debugging
+If you encounter problems, check Home Assistant logs:
+
+1. **View Integration Logs**:
+   ```
+   Settings → System → Logs
+   ```
+
+2. **Enable Debug Mode**:
+   Add the following to `configuration.yaml`:
+   ```yaml
+   logger:
+     default: info
+     logs:
+       custom_components.ai_hub: debug
+   ```
+
+3. **Restart Home Assistant** and retest functionality
+
+### Getting Help
+If problems persist:
+1. **Check [Issues page](https://github.com/ha-china/ai_hub/issues)** to see if there are similar issues
+2. **Create a new Issue** with:
+   - Home Assistant version
+   - AI Hub version
+   - Detailed error description
+   - Relevant logs
+   - Reproduction steps
+
+---
+
+## 🤝 Contributing
+
+You're welcome to contribute and help improve features and documentation:
+
+### How to Contribute
+1. **Report Issues**: Report bugs or feature requests via [Issues](https://github.com/ha-china/ai_hub/issues)
+2. **Submit Code**: Fork the project, make changes, and submit a Pull Request
+3. **Improve Docs**: Help improve documentation and add usage examples
+4. **Testing & Feedback**: Test new features and give feedback
+
+### Development Environment
+1. **Clone the Project**:
+   ```bash
+   git clone https://github.com/ha-china/ai_hub.git
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run Tests**:
+   ```bash
+   python -m pytest
+   ```
+
+### Code Standards
+- Follow PEP 8 style guide
+- Add appropriate comments and docstrings
+- Ensure all code passes existing tests
+- Run a code formatter before submitting
+
+---
+
+## 📄 License
+
+This project is released under the [LICENSE](LICENSE) in the repository.
+
+### Project Links
+- **Project Home**: [https://github.com/ha-china/ai_hub](https://github.com/ha-china/ai_hub)
+- **Issues**: [https://github.com/ha-china/ai_hub/issues](https://github.com/ha-china/ai_hub/issues)
+- **Releases**: [https://github.com/ha-china/ai_hub/releases](https://github.com/ha-china/ai_hub/releases)
+- **HACS Page**: [HACS Integration Store](https://hacs.xyz/docs/integration/setup)
+
+### Special Thanks
+- Thanks to [knoop7](https://github.com/knoop7) for the base architecture
+- Thanks to [hasscc/hass-edge-tts](https://github.com/hasscc/hass-edge-tts) for Edge TTS integration
+- Thanks to all contributors and users for your support and feedback
+
+---
+
+<p align="center">
+  <strong>If this project helps you, please consider giving it a ⭐ star!</strong>
+</p>
