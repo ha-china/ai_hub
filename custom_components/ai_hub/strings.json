@@ -172,6 +172,14 @@
         "user": "添加集成汉化"
       },
       "entry_type": "AI Hub 集成汉化",
+      "step": {
+        "init": {
+          "title": "添加集成汉化",
+          "description": "启用组件翻译功能，将自定义集成的英文翻译为中文。",
+          "data": {},
+          "data_description": {}
+        }
+      },
       "abort": {
         "translation_no_reconfigure": "集成汉化不支持重新配置。如需修改设置，请删除后重新添加。"
       }
