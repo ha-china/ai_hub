@@ -33,7 +33,6 @@
 ## 🔧 Prerequisites
 
 - **Home Assistant**: Version 2025.8.0 or above
-- **HACS**: Version 4.0 or above (recommended)
 - **Network Requirement**: This integration fully depends on Internet services, a stable network connection is required
 
 ## 🌟 Features
