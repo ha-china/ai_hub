@@ -2,6 +2,7 @@
 <p align="center">
   为了让你体验各种免费的AI服务，本集成不支持任何收费模型及服务，当然你可能会需要申请账号或创建 API Key。<br>
   <strong>开篇致谢：</strong>前人栽树，后人乘凉。没有 <a href="https://github.com/knoop7" target="_blank">knoop7</a> 和 <a href="https://github.com/hasscc/hass-edge-tts" target="_blank">hasscc/hass-edge-tts</a> 这两个项目，就没有本集成，特此感谢！
+  
 </p>
 
 <p align="center">
@@ -37,7 +38,9 @@
 
 ## 🌟 功能介绍
 
-AI Hub 是 Home Assistant 的自定义集成，提供与智谱AI、硅基流动、巴法云的原生对接：
+AI Hub 是 Home Assistant 的自定义集成，提供与智谱AI、硅基流动、巴法云的原生对接
+
+如果有些条目你不需要，只需要不填api key即可，或者也可以直接删除就行，后续有需要可以再次添加
 
 ### 核心功能
 
@@ -71,8 +74,7 @@ AI Hub 是 Home Assistant 的自定义集成，提供与智谱AI、硅基流动�
 
 #### 📱 微信消息推送（Bemfa）
 - **实时通知**: 集成巴法云服务，通过微信发送设备状态通知
-- **多媒体支持**: 支持发送文本消息和图片消息
-- **简单配置**: 只需获取巴法云设备主题即可使用
+
 
 ---
 
@@ -124,7 +126,7 @@ AI Hub 支持子条目配置，可以为不同功能创建独立的配置：
 
 ### 智谱AI（Zhipu AI）
 - **用途**: 对话助手、AI任务、语音合成、语音识别
-- **注册地址**: [https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)
+- **注册地址**: [点击注册](https://www.bigmodel.cn/claude-code?ic=19ZL5KZU1F)
 - **获取API Key**:
   1. 完成注册并登录
   2. 进入 [控制台](https://open.bigmodel.cn/usercenter/apikeys)
@@ -133,7 +135,7 @@ AI Hub 支持子条目配置，可以为不同功能创建独立的配置：
 
 ### 硅基流动性（SiliconFlow）
 - **用途**: 语音识别服务
-- **注册地址**: [https://cloud.siliconflow.cn/i/U3e0rmsr](https://cloud.siliconflow.cn/i/U3e0rmsr)
+- **注册地址**: [点击注册](https://cloud.siliconflow.cn/i/U3e0rmsr)
 - **获取API Key**:
   1. 完成注册并登录
   2. 进入控制台
@@ -142,7 +144,7 @@ AI Hub 支持子条目配置，可以为不同功能创建独立的配置：
 
 ### 巴法云（Bemfa）
 - **用途**: 微信消息推送
-- **注册地址**: [http://www.cloud.bemfa.com/u_register.php](http://www.cloud.bemfa.com/u_register.php)
+- **注册地址**: [点击注册](http://www.cloud.bemfa.com/u_register.php)
 - **获取设备主题**:
   1. 完成注册并登录
   2. 进入 [TCP设备管理](https://cloud.bemfa.com/tcp/index.html)
@@ -518,29 +520,7 @@ AI Hub 支持 60+ 种语言的 400+ 种语音，包括：
 3. **完善文档**: 帮助改进文档内容，增加使用示例
 4. **测试反馈**: 测试新功能并提供反馈
 
-### 开发环境
-1. **克隆项目**:
-   ```bash
-   git clone https://github.com/ha-china/ai_hub.git
-   ```
 
-2. **安装依赖**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **运行测试**:
-   ```bash
-   python -m pytest
-   ```
-
-### 代码规范
-- 遵循 PEP 8 代码规范
-- 添加适当的注释和文档字符串
-- 确保代码通过现有测试
-- 提交前运行代码格式化工具
-
----
 
 ## 📄 许可协议
 
@@ -557,8 +537,3 @@ AI Hub 支持 60+ 种语言的 400+ 种语音，包括：
 - 感谢 [hasscc/hass-edge-tts](https://github.com/hasscc/hass-edge-tts) 项目的 Edge TTS 集成
 - 感谢所有贡献者和用户的支持与反馈
 
----
-
-<p align="center">
-  <strong>如果这个项目对你有帮助，请考虑给一个 ⭐ Star 支持一下！</strong>
-</p>
