@@ -9,7 +9,8 @@
       "Bash(python -c \"import services; print(''services imported successfully'')\")",
       "WebSearch",
       "Bash(find:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:open.bigmodel.cn)"
     ],
     "deny": [],
     "ask": []

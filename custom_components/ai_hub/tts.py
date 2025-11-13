@@ -104,8 +104,14 @@ class AIHubTextToSpeechEntity(TextToSpeechEntity, AIHubEntityBase):
 
     @property
     def default_language(self) -> str:
-        """Return the default language from configuration."""
-        return self.subentry.data.get(CONF_TTS_LANG, TTS_DEFAULT_LANG)
+        """Return the default language from configured voice."""
+        # First try to get language from legacy CONF_TTS_LANG for backward compatibility
+        if CONF_TTS_LANG in self.subentry.data:
+            return self.subentry.data[CONF_TTS_LANG]
+
+        # Extract language from configured voice ID (e.g., "zh-CN-XiaoxiaoNeural" -> "zh-CN")
+        voice = self.subentry.data.get(CONF_TTS_VOICE, TTS_DEFAULT_VOICE)
+        return EDGE_TTS_VOICES.get(voice, TTS_DEFAULT_LANG)
 
     @property
     def supported_languages(self) -> list[str]:
@@ -211,16 +217,44 @@ class AIHubTextToSpeechEntity(TextToSpeechEntity, AIHubEntityBase):
         if not message or not message.strip():
             raise HomeAssistantError("文本内容不能为空")
 
-        opt = {CONF_TTS_LANG: language}
-        if language in SUPPORTED_LANGUAGES:
-            opt[CONF_TTS_LANG] = SUPPORTED_LANGUAGES.get(language)
-            opt['voice'] = language
-        opt = {**config, **opt, **options}
+        # Priority order for voice selection:
+        # 1. Voice from options (Voice Assistant explicit choice)
+        # 2. Configured voice from integration settings
+        # 3. Default voice for the requested language
+        # 4. Global default voice
 
-        lang = opt.get(CONF_TTS_LANG) or language or self.default_language
-        voice = opt.get('voice') or SUPPORTED_LANGUAGES.get(lang) or TTS_DEFAULT_VOICE
+        voice = None
 
-        _LOGGER.debug('TTS: %s', [message, opt])
+        # Check if Voice Assistant specified a voice in options
+        if 'voice' in options and options['voice']:
+            voice = options['voice']
+            _LOGGER.debug("Using Voice Assistant specified voice: %s", voice)
+        else:
+            # Use configured voice from integration
+            voice = config.get(CONF_TTS_VOICE, TTS_DEFAULT_VOICE)
+            _LOGGER.debug("Using integration configured voice: %s", voice)
+
+        # Verify the voice exists in our supported voices
+        if voice not in EDGE_TTS_VOICES:
+            _LOGGER.warning("Voice '%s' not found in supported voices, using default for language %s", voice, language)
+            # Try to get default voice for the language
+            voice = self._get_default_voice_for_language(language)
+            if voice not in EDGE_TTS_VOICES:
+                voice = TTS_DEFAULT_VOICE
+
+        # Extract the actual language from the selected voice
+        actual_language = EDGE_TTS_VOICES.get(voice, TTS_DEFAULT_LANG)
+
+        # Log language/voice mapping for debugging
+        if language and actual_language and language != actual_language:
+            _LOGGER.info("Language mapping: Voice Assistant requested '%s', using voice '%s' (language: %s)",
+                        language, voice, actual_language)
+
+        # Merge configuration options
+        opt = {**config, **options}
+
+        _LOGGER.debug('TTS: message="%s", voice="%s", requested_lang="%s", actual_lang="%s"',
+                     message, voice, language, actual_language)
 
         try:
             communicate = edge_tts.Communicate(

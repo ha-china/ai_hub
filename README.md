@@ -16,18 +16,20 @@
 
 ## 📋 目录
 
-- [前置条件](#前置条件)
-- [功能介绍](#功能介绍)
-- [安装方法](#安装方法)
-- [快速开始](#快速开始)
-- [账号注册与Token获取](#账号注册与token获取)
-- [使用指南](#使用指南)
-- [服务调用详解](#服务调用详解)
-- [参数配置](#参数配置)
-- [注意事项](#注意事项)
-- [故障排除](#故障排除)
-- [参与贡献](#参与贡献)
-- [许可协议](#许可协议)
+- [🔧 前置条件](#🔧-前置条件)
+- [🌟 功能介绍](#🌟-功能介绍)
+- [📦 安装方法](#📦-安装方法)
+- [🚀 快速开始](#🚀-快速开始)
+- [🔑 账号注册与Token获取](#🔑-账号注册与token获取)
+- [📖 使用指南](#📖-使用指南)
+- [🔧 服务调用详解](#🔧-服务调用详解)
+- [⚙️ 参数配置](#⚙️-参数配置)
+- [⚠️ 注意事项](#⚠️-注意事项)
+- [🛠️ 故障排除](#🛠️-故障排除)
+- [🤝 参与贡献](#🤝-参与贡献)
+- [📄 许可协议](#📄-许可协议)
+- [📱 关注我](#📱-关注我)
+- [☕ 赞助支持](#☕-赞助支持)
 
 ---
 
@@ -524,3 +526,19 @@ data:
 - 感谢 [hasscc/hass-edge-tts](https://github.com/hasscc/hass-edge-tts) 项目的 Edge TTS 集成
 - 感谢所有贡献者和用户的支持与反馈
 
+## 📱 关注我
+
+📲 扫描下面二维码，关注我。有需要可以随时给我留言：
+
+<img src="https://gitee.com/desmond_GT/hassio-addons/raw/main/WeChat_QRCode.png" width="50%" /> 
+
+## ☕ 赞助支持
+
+如果您觉得我花费大量时间维护这个库对您有帮助，欢迎请我喝杯奶茶，您的支持将是我持续改进的动力！
+
+<div style="display: flex; justify-content: space-between;">
+  <img src="https://gitee.com/desmond_GT/hassio-addons/raw/main/1_readme/Ali_Pay.jpg" height="350px" />
+  <img src="https://gitee.com/desmond_GT/hassio-addons/raw/main/1_readme/WeChat_Pay.jpg" height="350px" />
+</div> 💖
+
+感谢您的支持与鼓励！

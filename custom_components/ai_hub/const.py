@@ -33,6 +33,82 @@ def get_localized_name(hass: HomeAssistant, zh_name: str, en_name: str) -> str:
     else:
         return en_name
 
+
+def _build_edge_tts_languages() -> dict:
+    """从EDGE_TTS_VOICES构建语言映射，避免重复维护."""
+    languages = {}
+    for voice_id, lang_code in EDGE_TTS_VOICES.items():
+        # 提取语音名称（去掉语言代码后缀）
+        voice_name = voice_id.replace(f"{lang_code}-", "")
+
+        if lang_code not in languages:
+            # 获取本地化语言名称
+            if lang_code == "zh-CN":
+                lang_name = "中文（简体）"
+            elif lang_code == "en-US":
+                lang_name = "English (US)"
+            elif lang_code == "en-GB":
+                lang_name = "English (UK)"
+            elif lang_code == "ja-JP":
+                lang_name = "日本語"
+            elif lang_code == "ko-KR":
+                lang_name = "한국어"
+            elif lang_code == "fr-FR":
+                lang_name = "Français"
+            elif lang_code == "de-DE":
+                lang_name = "Deutsch"
+            elif lang_code == "es-ES":
+                lang_name = "Español"
+            elif lang_code == "it-IT":
+                lang_name = "Italiano"
+            elif lang_code == "pt-BR":
+                lang_name = "Português (Brasil)"
+            elif lang_code == "ru-RU":
+                lang_name = "Русский"
+            elif lang_code == "ar-SA":
+                lang_name = "العربية"
+            elif lang_code == "hi-IN":
+                lang_name = "हिन्दी"
+            elif lang_code == "th-TH":
+                lang_name = "ไทย"
+            elif lang_code == "vi-VN":
+                lang_name = "Tiếng Việt"
+            elif lang_code == "id-ID":
+                lang_name = "Bahasa Indonesia"
+            elif lang_code == "ms-MY":
+                lang_name = "Bahasa Melayu"
+            elif lang_code == "tr-TR":
+                lang_name = "Türkçe"
+            elif lang_code == "nl-NL":
+                lang_name = "Nederlands"
+            elif lang_code == "pl-PL":
+                lang_name = "Polski"
+            elif lang_code == "sv-SE":
+                lang_name = "Svenska"
+            elif lang_code == "nb-NO":
+                lang_name = "Norsk"
+            elif lang_code == "da-DK":
+                lang_name = "Dansk"
+            elif lang_code == "fi-FI":
+                lang_name = "Suomi"
+            elif lang_code == "el-GR":
+                lang_name = "Ελληνικά"
+            elif lang_code == "he-IL":
+                lang_name = "עברית"
+            else:
+                lang_name = lang_code
+
+            languages[lang_code] = {
+                "name": lang_name,
+                "voices": {}
+            }
+
+        languages[lang_code]["voices"][voice_id] = voice_name
+
+    return languages
+
+
+
 # Domain
 DOMAIN: Final = "ai_hub"
 
@@ -92,9 +168,11 @@ RECOMMENDED_TTS_MODEL: Final = "zh-CN-XiaoxiaoNeural"
 SILICONFLOW_API_BASE: Final = "https://api.siliconflow.cn/v1"
 SILICONFLOW_ASR_URL: Final = f"{SILICONFLOW_API_BASE}/audio/transcriptions"
 RECOMMENDED_STT_MODEL: Final = "FunAudioLLM/SenseVoiceSmall"
+
+# Silicon Flow STT Models (官方完整列表)
 SILICONFLOW_STT_MODELS: Final = [
-    "FunAudioLLM/SenseVoiceSmall",  # SenseVoiceSmall模型（推荐）
-    "TeleAI/TeleSpeechASR",          # TeleSpeechASR模型
+    "TeleAI/TeleSpeechASR",          # TeleSpeechASR - 免费
+    "FunAudioLLM/SenseVoiceSmall",   # SenseVoiceSmall - 免费（推荐）
 ]
 
 # Silicon Flow STT Language Options
@@ -127,497 +205,321 @@ SILICONFLOW_STT_AUDIO_FORMATS: Final = [
     "webm",   # WebM格式
 ]
 
-# Edge TTS Voice Options - Complete voice list by language
+# Edge TTS Voices (完整官方列表)
 EDGE_TTS_VOICES: Final = {
-    # Chinese (Simplified) - Mainland China
-    "zh-CN-XiaoxiaoNeural": "zh-CN",
-    "zh-CN-XiaoyiNeural": "zh-CN",
-    "zh-CN-YunjianNeural": "zh-CN",
-    "zh-CN-YunxiNeural": "zh-CN",
-    "zh-CN-YunxiaNeural": "zh-CN",
-    "zh-CN-YunyangNeural": "zh-CN",
-
-    # Chinese (Traditional) - Hong Kong
-    "zh-HK-HiuGaaiNeural": "zh-HK",
-    "zh-HK-HiuMaanNeural": "zh-HK",
-    "zh-HK-WanLungNeural": "zh-HK",
-
-    # Chinese (Traditional) - Taiwan
-    "zh-TW-HsiaoChenNeural": "zh-TW",
-    "zh-TW-YunJheNeural": "zh-TW",
-    "zh-TW-HsiaoYuNeural": "zh-TW",
-
-    # English - US
-    "en-US-JennyNeural": "en-US",
-    "en-US-GuyNeural": "en-US",
-    "en-US-AriaNeural": "en-US",
-    "en-US-DavisNeural": "en-US",
-    "en-US-JaneNeural": "en-US",
-    "en-US-JasonNeural": "en-US",
-    "en-US-SaraNeural": "en-US",
-    "en-US-TonyNeural": "en-US",
-    "en-US-NancyNeural": "en-US",
-    "en-US-AmberNeural": "en-US",
-    "en-US-AnaNeural": "en-US",
-    "en-US-AshleyNeural": "en-US",
-    "en-US-BrandonNeural": "en-US",
-    "en-US-ChristopherNeural": "en-US",
-    "en-US-CoraNeural": "en-US",
-    "en-US-ElizabethNeural": "en-US",
-    "en-US-EricNeural": "en-US",
-    "en-US-JacobNeural": "en-US",
-    "en-US-JenniferNeural": "en-US",
-    "en-US-MichelleNeural": "en-US",
-    "en-US-MonicaNeural": "en-US",
-    "en-US-RogerNeural": "en-US",
-
-    # English - UK
-    "en-GB-LibbyNeural": "en-GB",
-    "en-GB-MaisieNeural": "en-GB",
-    "en-GB-RyanNeural": "en-GB",
-    "en-GB-SoniaNeural": "en-GB",
-    "en-GB-ThomasNeural": "en-GB",
-    "en-GB-AvaNeural": "en-GB",
-    "en-GB-GeorgeNeural": "en-GB",
-    "en-GB-HazelNeural": "en-GB",
-
-    # English - Australia
-    "en-AU-NatashaNeural": "en-AU",
-    "en-AU-WilliamNeural": "en-AU",
-
-    # English - Canada
-    "en-CA-ClaraNeural": "en-CA",
-    "en-CA-LiamNeural": "en-CA",
-
-    # English - India
-    "en-IN-NeerjaNeural": "en-IN",
-    "en-IN-PrabhatNeural": "en-IN",
-
-    # Japanese
-    "ja-JP-NanamiNeural": "ja-JP",
-    "ja-JP-KeitaNeural": "ja-JP",
-
-    # Korean
-    "ko-KR-SunHiNeural": "ko-KR",
-    "ko-KR-InJoonNeural": "ko-KR",
-    "ko-KR-HyunsuNeural": "ko-KR",
-    "ko-KR-BongJinNeural": "ko-KR",
-    "ko-KR-GooUnNeural": "ko-KR",
-    "ko-KR-JiMinNeural": "ko-KR",
-    "ko-KR-SeoHyeonNeural": "ko-KR",
-    "ko-KR-YuJinNeural": "ko-KR",
-
-    # French
-    "fr-FR-DeniseNeural": "fr-FR",
-    "fr-FR-EloiseNeural": "fr-FR",
-    "fr-FR-HenriNeural": "fr-FR",
-
-    # German
-    "de-DE-KatjaNeural": "de-DE",
-    "de-DE-ConradNeural": "de-DE",
-
-    # Spanish
-    "es-ES-ElviraNeural": "es-ES",
-    "es-ES-AlvaroNeural": "es-ES",
-
-    # Italian
-    "it-IT-ElsaNeural": "it-IT",
-    "it-IT-IsabellaNeural": "it-IT",
-
-    # Portuguese - Brazil
-    "pt-BR-FranciscaNeural": "pt-BR",
-    "pt-BR-AntonioNeural": "pt-BR",
-
-    # Russian
-    "ru-RU-SvetlanaNeural": "ru-RU",
-    "ru-RU-DmitryNeural": "ru-RU",
-
-    # Arabic
-    "ar-SA-ZariyahNeural": "ar-SA",
-    "ar-SA-HamedNeural": "ar-SA",
-
-    # Hindi
-    "hi-IN-SwaraNeural": "hi-IN",
-    "hi-IN-MadhurNeural": "hi-IN",
-
-    # Thai
-    "th-TH-AcharaNeural": "th-TH",
-    "th-TH-NiwatNeural": "th-TH",
-
-    # Vietnamese
-    "vi-VN-HoaiMyNeural": "vi-VN",
-    "vi-VN-NamMinhNeural": "vi-VN",
-
-    # Indonesian
-    "id-ID-GadisNeural": "id-ID",
-    "id-ID-ArdiNeural": "id-ID",
-
-    # Malay
-    "ms-MY-YasminNeural": "ms-MY",
-
-    # Turkish
-    "tr-TR-EmelNeural": "tr-TR",
-    "tr-TR-AhmetNeural": "tr-TR",
-
-    # Dutch
-    "nl-NL-FennaNeural": "nl-NL",
-    "nl-NL-CoenNeural": "nl-NL",
-
-    # Polish
-    "pl-PL-ZofiaNeural": "pl-PL",
-    "pl-PL-JacekNeural": "pl-PL",
-
-    # Swedish
-    "sv-SE-SofieNeural": "sv-SE",
-    "sv-SE-MattiasNeural": "sv-SE",
-
-    # Norwegian
-    "nb-NO-PernilleNeural": "nb-NO",
-    "nb-NO-FinnNeural": "nb-NO",
-
-    # Danish
-    "da-DK-ChristelNeural": "da-DK",
-    "da-DK-JeppeNeural": "da-DK",
-
-    # Finnish
-    "fi-FI-SelmaNeural": "fi-FI",
-    "fi-FI-HarriNeural": "fi-FI",
-
-    # Greek
-    "el-GR-AthinaNeural": "el-GR",
-    "el-GR-NestorasNeural": "el-GR",
-
-    # Hebrew
-    "he-IL-AvriNeural": "he-IL",
-    "he-IL-HilaNeural": "he-IL",
-
-    # Romanian
-    "ro-RO-AlinaNeural": "ro-RO",
-    "ro-RO-EmilNeural": "ro-RO",
-
-    # Ukrainian
-    "uk-UA-PolinaNeural": "uk-UA",
-    "uk-UA-OstapNeural": "uk-UA",
-
-    # Bulgarian
-    "bg-BG-KalinaNeural": "bg-BG",
-    "bg-BG-BorislavNeural": "bg-BG",
-
-    # Croatian
-    "hr-HR-GabrijelaNeural": "hr-HR",
-    "hr-HR-SreckoNeural": "hr-HR",
-
-    # Slovak
-    "sk-SK-ViktoriaNeural": "sk-SK",
-    "sk-SK-LukasNeural": "sk-SK",
-
-    # Slovenian
-    "sl-SI-PetraNeural": "sl-SI",
-    "sl-SI-LadoNeural": "sl-SI",
-
-    # Estonian
-    "et-EE-AnuNeural": "et-EE",
-    "et-EE-KertNeural": "et-EE",
-
-    # Latvian
-    "lv-LV-EveritaNeural": "lv-LV",
-    "lv-LV-OskarsNeural": "lv-LV",
-
-    # Lithuanian
-    "lt-LT-OnaNeural": "lt-LT",
-    "lt-LT-LeonasNeural": "lt-LT",
-
-    # Hungarian
-    "hu-HU-NoemiNeural": "hu-HU",
-    "hu-HU-TamasNeural": "hu-HU",
-
-    # Czech
-    "cs-CZ-VlastaNeural": "cs-CZ",
-    "cs-CZ-AntoninNeural": "cs-CZ",
-
-    # Catalan
-    "ca-ES-JoanaNeural": "ca-ES",
-    "ca-ES-EnricNeural": "ca-ES",
-
-    # Basque
-    "eu-ES-AroaNeural": "eu-ES",
-    "eu-ES-AnderNeural": "eu-ES",
-
-    # Galician
-    "gl-ES-RoiNeural": "gl-ES",
-    "gl-ES-SabelaNeural": "gl-ES",
-
-    # Serbian (Cyrillic)
-    "sr-RS-SophieNeural": "sr-RS",
-    "sr-RS-NicholasNeural": "sr-RS",
-
-    # Serbian (Latin)
-    "sr-RS-SophieNeural": "sr-RS",
-    "sr-RS-NicholasNeural": "sr-RS",
-
-    # Icelandic
-    "is-IS-GudrunNeural": "is-IS",
-    "is-IS-GunnarNeural": "is-IS",
+    'zh-CN-XiaoxiaoNeural': 'zh-CN',
+    'zh-CN-XiaoyiNeural': 'zh-CN',
+    'zh-CN-YunjianNeural': 'zh-CN',
+    'zh-CN-YunxiNeural': 'zh-CN',
+    'zh-CN-YunxiaNeural': 'zh-CN',
+    'zh-CN-YunyangNeural': 'zh-CN',
+    'zh-HK-HiuGaaiNeural': 'zh-HK',
+    'zh-HK-HiuMaanNeural': 'zh-HK',
+    'zh-HK-WanLungNeural': 'zh-HK',
+    'zh-TW-HsiaoChenNeural': 'zh-TW',
+    'zh-TW-YunJheNeural': 'zh-TW',
+    'zh-TW-HsiaoYuNeural': 'zh-TW',
+    'af-ZA-AdriNeural': 'af-ZA',
+    'af-ZA-WillemNeural': 'af-ZA',
+    'am-ET-AmehaNeural': 'am-ET',
+    'am-ET-MekdesNeural': 'am-ET',
+    'ar-AE-FatimaNeural': 'ar-AE',
+    'ar-AE-HamdanNeural': 'ar-AE',
+    'ar-BH-AliNeural': 'ar-BH',
+    'ar-BH-LailaNeural': 'ar-BH',
+    'ar-DZ-AminaNeural': 'ar-DZ',
+    'ar-DZ-IsmaelNeural': 'ar-DZ',
+    'ar-EG-SalmaNeural': 'ar-EG',
+    'ar-EG-ShakirNeural': 'ar-EG',
+    'ar-IQ-BasselNeural': 'ar-IQ',
+    'ar-IQ-RanaNeural': 'ar-IQ',
+    'ar-JO-SanaNeural': 'ar-JO',
+    'ar-JO-TaimNeural': 'ar-JO',
+    'ar-KW-FahedNeural': 'ar-KW',
+    'ar-KW-NouraNeural': 'ar-KW',
+    'ar-LB-LaylaNeural': 'ar-LB',
+    'ar-LB-RamiNeural': 'ar-LB',
+    'ar-LY-ImanNeural': 'ar-LY',
+    'ar-LY-OmarNeural': 'ar-LY',
+    'ar-MA-JamalNeural': 'ar-MA',
+    'ar-MA-MounaNeural': 'ar-MA',
+    'ar-OM-AbdullahNeural': 'ar-OM',
+    'ar-OM-AyshaNeural': 'ar-OM',
+    'ar-QA-AmalNeural': 'ar-QA',
+    'ar-QA-MoazNeural': 'ar-QA',
+    'ar-SA-HamedNeural': 'ar-SA',
+    'ar-SA-ZariyahNeural': 'ar-SA',
+    'ar-SY-AmanyNeural': 'ar-SY',
+    'ar-SY-LaithNeural': 'ar-SY',
+    'ar-TN-HediNeural': 'ar-TN',
+    'ar-TN-ReemNeural': 'ar-TN',
+    'ar-YE-MaryamNeural': 'ar-YE',
+    'ar-YE-SalehNeural': 'ar-YE',
+    'az-AZ-BabekNeural': 'az-AZ',
+    'az-AZ-BanuNeural': 'az-AZ',
+    'bg-BG-BorislavNeural': 'bg-BG',
+    'bg-BG-KalinaNeural': 'bg-BG',
+    'bn-BD-NabanitaNeural': 'bn-BD',
+    'bn-BD-PradeepNeural': 'bn-BD',
+    'bn-IN-BashkarNeural': 'bn-IN',
+    'bn-IN-TanishaaNeural': 'bn-IN',
+    'bs-BA-GoranNeural': 'bs-BA',
+    'bs-BA-VesnaNeural': 'bs-BA',
+    'ca-ES-EnricNeural': 'ca-ES',
+    'ca-ES-JoanaNeural': 'ca-ES',
+    'cs-CZ-AntoninNeural': 'cs-CZ',
+    'cs-CZ-VlastaNeural': 'cs-CZ',
+    'cy-GB-AledNeural': 'cy-GB',
+    'cy-GB-NiaNeural': 'cy-GB',
+    'da-DK-ChristelNeural': 'da-DK',
+    'da-DK-JeppeNeural': 'da-DK',
+    'de-AT-IngridNeural': 'de-AT',
+    'de-AT-JonasNeural': 'de-AT',
+    'de-CH-JanNeural': 'de-CH',
+    'de-CH-LeniNeural': 'de-CH',
+    'de-DE-AmalaNeural': 'de-DE',
+    'de-DE-ConradNeural': 'de-DE',
+    'de-DE-KatjaNeural': 'de-DE',
+    'de-DE-SeraphinaMultilingualNeural': 'de-DE',
+    'de-DE-KillianNeural': 'de-DE',
+    'el-GR-AthinaNeural': 'el-GR',
+    'el-GR-NestorasNeural': 'el-GR',
+    'en-AU-NatashaNeural': 'en-AU',
+    'en-AU-WilliamNeural': 'en-AU',
+    'en-CA-ClaraNeural': 'en-CA',
+    'en-CA-LiamNeural': 'en-CA',
+    'en-GB-LibbyNeural': 'en-GB',
+    'en-GB-MaisieNeural': 'en-GB',
+    'en-GB-RyanNeural': 'en-GB',
+    'en-GB-SoniaNeural': 'en-GB',
+    'en-GB-ThomasNeural': 'en-GB',
+    'en-HK-SamNeural': 'en-HK',
+    'en-HK-YanNeural': 'en-HK',
+    'en-IE-ConnorNeural': 'en-IE',
+    'en-IE-EmilyNeural': 'en-IE',
+    'en-IN-NeerjaNeural': 'en-IN',
+    'en-IN-PrabhatNeural': 'en-IN',
+    'en-KE-AsiliaNeural': 'en-KE',
+    'en-KE-ChilembaNeural': 'en-KE',
+    'en-NG-AbeoNeural': 'en-NG',
+    'en-NG-EzinneNeural': 'en-NG',
+    'en-NZ-MitchellNeural': 'en-NZ',
+    'en-NZ-MollyNeural': 'en-NZ',
+    'en-PH-JamesNeural': 'en-PH',
+    'en-PH-RosaNeural': 'en-PH',
+    'en-SG-LunaNeural': 'en-SG',
+    'en-SG-WayneNeural': 'en-SG',
+    'en-TZ-ElimuNeural': 'en-TZ',
+    'en-TZ-ImaniNeural': 'en-TZ',
+    'en-US-AvaNeural': 'en-US',
+    'en-US-AndrewNeural': 'en-US',
+    'en-US-EmmaNeural': 'en-US',
+    'en-US-BrianNeural': 'en-US',
+    'en-US-AnaNeural': 'en-US',
+    'en-US-AndrewMultilingualNeural': 'en-US',
+    'en-US-AriaNeural': 'en-US',
+    'en-US-AvaMultilingualNeural': 'en-US',
+    'en-US-BrianMultilingualNeural': 'en-US',
+    'en-US-ChristopherNeural': 'en-US',
+    'en-US-EmmaMultilingualNeural': 'en-US',
+    'en-US-EricNeural': 'en-US',
+    'en-US-GuyNeural': 'en-US',
+    'en-US-JennyNeural': 'en-US',
+    'en-US-MichelleNeural': 'en-US',
+    'en-US-RogerNeural': 'en-US',
+    'en-US-SteffanNeural': 'en-US',
+    'en-ZA-LeahNeural': 'en-ZA',
+    'en-ZA-LukeNeural': 'en-ZA',
+    'es-AR-ElenaNeural': 'es-AR',
+    'es-AR-TomasNeural': 'es-AR',
+    'es-BO-MarceloNeural': 'es-BO',
+    'es-BO-SofiaNeural': 'es-BO',
+    'es-CL-CatalinaNeural': 'es-CL',
+    'es-CL-LorenzoNeural': 'es-CL',
+    'es-CO-GonzaloNeural': 'es-CO',
+    'es-CO-SalomeNeural': 'es-CO',
+    'es-CR-JuanNeural': 'es-CR',
+    'es-CR-MariaNeural': 'es-CR',
+    'es-CU-BelkysNeural': 'es-CU',
+    'es-CU-ManuelNeural': 'es-CU',
+    'es-DO-EmilioNeural': 'es-DO',
+    'es-DO-RamonaNeural': 'es-DO',
+    'es-EC-AndreaNeural': 'es-EC',
+    'es-EC-LuisNeural': 'es-EC',
+    'es-ES-AlvaroNeural': 'es-ES',
+    'es-ES-ElviraNeural': 'es-ES',
+    'es-ES-ManuelEsCUNeural': 'es-ES',
+    'es-GQ-JavierNeural': 'es-GQ',
+    'es-GQ-TeresaNeural': 'es-GQ',
+    'es-GT-AndresNeural': 'es-GT',
+    'es-GT-MartaNeural': 'es-GT',
+    'es-HN-CarlosNeural': 'es-HN',
+    'es-HN-KarlaNeural': 'es-HN',
+    'es-MX-DaliaNeural': 'es-MX',
+    'es-MX-JorgeNeural': 'es-MX',
+    'es-MX-LorenzoEsCLNeural': 'es-MX',
+    'es-NI-FedericoNeural': 'es-NI',
+    'es-NI-YolandaNeural': 'es-NI',
+    'es-PA-MargaritaNeural': 'es-PA',
+    'es-PA-RobertoNeural': 'es-PA',
+    'es-PE-AlexNeural': 'es-PE',
+    'es-PE-CamilaNeural': 'es-PE',
+    'es-PR-KarinaNeural': 'es-PR',
+    'es-PR-VictorNeural': 'es-PR',
+    'es-PY-MarioNeural': 'es-PY',
+    'es-PY-TaniaNeural': 'es-PY',
+    'es-SV-LorenaNeural': 'es-SV',
+    'es-SV-RodrigoNeural': 'es-SV',
+    'es-US-AlonsoNeural': 'es-US',
+    'es-US-PalomaNeural': 'es-US',
+    'es-UY-MateoNeural': 'es-UY',
+    'es-UY-ValentinaNeural': 'es-UY',
+    'es-VE-PaolaNeural': 'es-VE',
+    'es-VE-SebastianNeural': 'es-VE',
+    'et-EE-AnuNeural': 'et-EE',
+    'et-EE-KertNeural': 'et-EE',
+    'fa-IR-DilaraNeural': 'fa-IR',
+    'fa-IR-FaridNeural': 'fa-IR',
+    'fi-FI-HarriNeural': 'fi-FI',
+    'fi-FI-NooraNeural': 'fi-FI',
+    'fil-PH-AngeloNeural': 'fil-PH',
+    'fil-PH-BlessicaNeural': 'fil-PH',
+    'fr-BE-CharlineNeural': 'fr-BE',
+    'fr-BE-GerardNeural': 'fr-BE',
+    'fr-CA-AntoineNeural': 'fr-CA',
+    'fr-CA-JeanNeural': 'fr-CA',
+    'fr-CA-SylvieNeural': 'fr-CA',
+    'fr-CH-ArianeNeural': 'fr-CH',
+    'fr-CH-FabriceNeural': 'fr-CH',
+    'fr-FR-DeniseNeural': 'fr-FR',
+    'fr-FR-EloiseNeural': 'fr-FR',
+    'fr-FR-HenriNeural': 'fr-FR',
+    'ga-IE-ColmNeural': 'ga-IE',
+    'ga-IE-OrlaNeural': 'ga-IE',
+    'gl-ES-RoiNeural': 'gl-ES',
+    'gl-ES-SabelaNeural': 'gl-ES',
+    'gu-IN-DhwaniNeural': 'gu-IN',
+    'gu-IN-NiranjanNeural': 'gu-IN',
+    'he-IL-AvriNeural': 'he-IL',
+    'he-IL-HilaNeural': 'he-IL',
+    'hi-IN-MadhurNeural': 'hi-IN',
+    'hi-IN-SwaraNeural': 'hi-IN',
+    'hr-HR-GabrijelaNeural': 'hr-HR',
+    'hr-HR-SreckoNeural': 'hr-HR',
+    'hu-HU-NoemiNeural': 'hu-HU',
+    'hu-HU-TamasNeural': 'hu-HU',
+    'id-ID-ArdiNeural': 'id-ID',
+    'id-ID-GadisNeural': 'id-ID',
+    'is-IS-GudrunNeural': 'is-IS',
+    'is-IS-GunnarNeural': 'is-IS',
+    'it-IT-DiegoNeural': 'it-IT',
+    'it-IT-ElsaNeural': 'it-IT',
+    'it-IT-IsabellaNeural': 'it-IT',
+    'ja-JP-KeitaNeural': 'ja-JP',
+    'ja-JP-NanamiNeural': 'ja-JP',
+    'jv-ID-DimasNeural': 'jv-ID',
+    'jv-ID-SitiNeural': 'jv-ID',
+    'ka-GE-EkaNeural': 'ka-GE',
+    'ka-GE-GiorgiNeural': 'ka-GE',
+    'kk-KZ-AigulNeural': 'kk-KZ',
+    'kk-KZ-DauletNeural': 'kk-KZ',
+    'km-KH-PisethNeural': 'km-KH',
+    'km-KH-SreymomNeural': 'km-KH',
+    'kn-IN-GaganNeural': 'kn-IN',
+    'kn-IN-SapnaNeural': 'kn-IN',
+    'ko-KR-InJoonNeural': 'ko-KR',
+    'ko-KR-SunHiNeural': 'ko-KR',
+    'lo-LA-ChanthavongNeural': 'lo-LA',
+    'lo-LA-KeomanyNeural': 'lo-LA',
+    'lt-LT-LeonasNeural': 'lt-LT',
+    'lt-LT-OnaNeural': 'lt-LT',
+    'lv-LV-EveritaNeural': 'lv-LV',
+    'lv-LV-NilsNeural': 'lv-LV',
+    'mk-MK-AleksandarNeural': 'mk-MK',
+    'mk-MK-MarijaNeural': 'mk-MK',
+    'ml-IN-MidhunNeural': 'ml-IN',
+    'ml-IN-SobhanaNeural': 'ml-IN',
+    'mn-MN-BataaNeural': 'mn-MN',
+    'mn-MN-YesuiNeural': 'mn-MN',
+    'mr-IN-AarohiNeural': 'mr-IN',
+    'mr-IN-ManoharNeural': 'mr-IN',
+    'ms-MY-OsmanNeural': 'ms-MY',
+    'ms-MY-YasminNeural': 'ms-MY',
+    'mt-MT-GraceNeural': 'mt-MT',
+    'mt-MT-JosephNeural': 'mt-MT',
+    'my-MM-NilarNeural': 'my-MM',
+    'my-MM-ThihaNeural': 'my-MM',
+    'nb-NO-FinnNeural': 'nb-NO',
+    'nb-NO-PernilleNeural': 'nb-NO',
+    'ne-NP-HemkalaNeural': 'ne-NP',
+    'ne-NP-SagarNeural': 'ne-NP',
+    'nl-BE-ArnaudNeural': 'nl-BE',
+    'nl-BE-DenaNeural': 'nl-BE',
+    'nl-NL-ColetteNeural': 'nl-NL',
+    'nl-NL-FennaNeural': 'nl-NL',
+    'nl-NL-MaartenNeural': 'nl-NL',
+    'pl-PL-MarekNeural': 'pl-PL',
+    'pl-PL-ZofiaNeural': 'pl-PL',
+    'ps-AF-GulNawazNeural': 'ps-AF',
+    'ps-AF-LatifaNeural': 'ps-AF',
+    'pt-BR-AntonioNeural': 'pt-BR',
+    'pt-BR-FranciscaNeural': 'pt-BR',
+    'pt-PT-DuarteNeural': 'pt-PT',
+    'pt-PT-RaquelNeural': 'pt-PT',
+    'ro-RO-AlinaNeural': 'ro-RO',
+    'ro-RO-EmilNeural': 'ro-RO',
+    'ru-RU-DmitryNeural': 'ru-RU',
+    'ru-RU-SvetlanaNeural': 'ru-RU',
+    'si-LK-SameeraNeural': 'si-LK',
+    'si-LK-ThiliniNeural': 'si-LK',
+    'sk-SK-LukasNeural': 'sk-SK',
+    'sk-SK-ViktoriaNeural': 'sk-SK',
+    'sl-SI-PetraNeural': 'sl-SI',
+    'sl-SI-RokNeural': 'sl-SI',
+    'so-SO-MuuseNeural': 'so-SO',
+    'so-SO-UbaxNeural': 'so-SO',
+    'sq-AL-AnilaNeural': 'sq-AL',
+    'sq-AL-IlirNeural': 'sq-AL',
+    'sr-RS-NicholasNeural': 'sr-RS',
+    'sr-RS-SophieNeural': 'sr-RS',
+    'su-ID-JajangNeural': 'su-ID',
+    'su-ID-TutiNeural': 'su-ID',
+    'sv-SE-MattiasNeural': 'sv-SE',
+    'sv-SE-SofieNeural': 'sv-SE',
+    'sw-KE-RafikiNeural': 'sw-KE',
+    'sw-KE-ZuriNeural': 'sw-KE',
+    'sw-TZ-DaudiNeural': 'sw-TZ',
+    'sw-TZ-RehemaNeural': 'sw-TZ',
+    'ta-IN-PallaviNeural': 'ta-IN',
+    'ta-IN-ValluvarNeural': 'ta-IN',
+    'ta-LK-KumarNeural': 'ta-LK',
+    'ta-LK-SaranyaNeural': 'ta-LK',
+    'ta-MY-KaniNeural': 'ta-MY',
+    'ta-MY-SuryaNeural': 'ta-MY',
+    'ta-SG-AnbuNeural': 'ta-SG',
+    'ta-SG-VenbaNeural': 'ta-SG',
+    'te-IN-MohanNeural': 'te-IN',
+    'te-IN-ShrutiNeural': 'te-IN',
+    'th-TH-NiwatNeural': 'th-TH',
+    'th-TH-PremwadeeNeural': 'th-TH',
+    'tr-TR-AhmetNeural': 'tr-TR',
+    'tr-TR-EmelNeural': 'tr-TR',
+    'uk-UA-OstapNeural': 'uk-UA',
+    'uk-UA-PolinaNeural': 'uk-UA',
+    'ur-IN-GulNeural': 'ur-IN',
+    'ur-IN-SalmanNeural': 'ur-IN',
+    'ur-PK-AsadNeural': 'ur-PK',
+    'ur-PK-UzmaNeural': 'ur-PK',
+    'uz-UZ-MadinaNeural': 'uz-UZ',
+    'uz-UZ-SardorNeural': 'uz-UZ',
+    'vi-VN-HoaiMyNeural': 'vi-VN',
+    'vi-VN-NamMinhNeural': 'vi-VN',
+    'zu-ZA-ThandoNeural': 'zu-ZA',
+    'zu-ZA-ThembaNeural': 'zu-ZA',
 }
 
-# Edge TTS Language to Voices Mapping
-EDGE_TTS_LANGUAGES: Final = {
-    "zh-CN": {
-        "name": "中文（简体）",
-        "voices": {
-            "zh-CN-XiaoxiaoNeural": "晓晓",
-            "zh-CN-XiaoyiNeural": "晓伊",
-            "zh-CN-YunjianNeural": "云健",
-            "zh-CN-YunxiNeural": "云希",
-            "zh-CN-YunxiaNeural": "云霞",
-            "zh-CN-YunyangNeural": "云扬",
-        }
-    },
-    "zh-HK": {
-        "name": "中文（香港）",
-        "voices": {
-            "zh-HK-HiuGaaiNeural": "晓佳",
-            "zh-HK-HiuMaanNeural": "晓雯",
-            "zh-HK-WanLungNeural": "云龙",
-        }
-    },
-    "zh-TW": {
-        "name": "中文（台湾）",
-        "voices": {
-            "zh-TW-HsiaoChenNeural": "晓臻",
-            "zh-TW-YunJheNeural": "云哲",
-            "zh-TW-HsiaoYuNeural": "晓雨",
-        }
-    },
-    "en-US": {
-        "name": "English (US)",
-        "voices": {
-            "en-US-JennyNeural": "Jenny",
-            "en-US-GuyNeural": "Guy",
-            "en-US-AriaNeural": "Aria",
-            "en-US-DavisNeural": "Davis",
-            "en-US-JaneNeural": "Jane",
-            "en-US-JasonNeural": "Jason",
-            "en-US-SaraNeural": "Sara",
-            "en-US-TonyNeural": "Tony",
-            "en-US-NancyNeural": "Nancy",
-            "en-US-AmberNeural": "Amber",
-            "en-US-AnaNeural": "Ana",
-            "en-US-AshleyNeural": "Ashley",
-            "en-US-BrandonNeural": "Brandon",
-            "en-US-ChristopherNeural": "Christopher",
-            "en-US-CoraNeural": "Cora",
-            "en-US-ElizabethNeural": "Elizabeth",
-            "en-US-EricNeural": "Eric",
-            "en-US-JacobNeural": "Jacob",
-            "en-US-JenniferNeural": "Jennifer",
-            "en-US-MichelleNeural": "Michelle",
-            "en-US-MonicaNeural": "Monica",
-            "en-US-RogerNeural": "Roger",
-        }
-    },
-    "en-GB": {
-        "name": "English (UK)",
-        "voices": {
-            "en-GB-LibbyNeural": "Libby",
-            "en-GB-MaisieNeural": "Maisie",
-            "en-GB-RyanNeural": "Ryan",
-            "en-GB-SoniaNeural": "Sonia",
-            "en-GB-ThomasNeural": "Thomas",
-            "en-GB-AvaNeural": "Ava",
-            "en-GB-GeorgeNeural": "George",
-            "en-GB-HazelNeural": "Hazel",
-        }
-    },
-    "en-AU": {
-        "name": "English (Australia)",
-        "voices": {
-            "en-AU-NatashaNeural": "Natasha",
-            "en-AU-WilliamNeural": "William",
-        }
-    },
-    "en-CA": {
-        "name": "English (Canada)",
-        "voices": {
-            "en-CA-ClaraNeural": "Clara",
-            "en-CA-LiamNeural": "Liam",
-        }
-    },
-    "en-IN": {
-        "name": "English (India)",
-        "voices": {
-            "en-IN-NeerjaNeural": "Neerja",
-            "en-IN-PrabhatNeural": "Prabhat",
-        }
-    },
-    "ja-JP": {
-        "name": "日本語",
-        "voices": {
-            "ja-JP-NanamiNeural": "Nanami",
-            "ja-JP-KeitaNeural": "Keita",
-        }
-    },
-    "ko-KR": {
-        "name": "한국어",
-        "voices": {
-            "ko-KR-SunHiNeural": "SunHi",
-            "ko-KR-InJoonNeural": "InJoon",
-            "ko-KR-HyunsuNeural": "Hyunsu",
-            "ko-KR-BongJinNeural": "BongJin",
-            "ko-KR-GooUnNeural": "GooUn",
-            "ko-KR-JiMinNeural": "JiMin",
-            "ko-KR-SeoHyeonNeural": "SeoHyeon",
-            "ko-KR-YuJinNeural": "YuJin",
-        }
-    },
-    "fr-FR": {
-        "name": "Français",
-        "voices": {
-            "fr-FR-DeniseNeural": "Denise",
-            "fr-FR-EloiseNeural": "Eloise",
-            "fr-FR-HenriNeural": "Henri",
-        }
-    },
-    "de-DE": {
-        "name": "Deutsch",
-        "voices": {
-            "de-DE-KatjaNeural": "Katja",
-            "de-DE-ConradNeural": "Conrad",
-        }
-    },
-    "es-ES": {
-        "name": "Español",
-        "voices": {
-            "es-ES-ElviraNeural": "Elvira",
-            "es-ES-AlvaroNeural": "Alvaro",
-        }
-    },
-    "it-IT": {
-        "name": "Italiano",
-        "voices": {
-            "it-IT-ElsaNeural": "Elsa",
-            "it-IT-IsabellaNeural": "Isabella",
-        }
-    },
-    "pt-BR": {
-        "name": "Português (Brasil)",
-        "voices": {
-            "pt-BR-FranciscaNeural": "Francisca",
-            "pt-BR-AntonioNeural": "Antonio",
-        }
-    },
-    "ru-RU": {
-        "name": "Русский",
-        "voices": {
-            "ru-RU-SvetlanaNeural": "Svetlana",
-            "ru-RU-DmitryNeural": "Dmitry",
-        }
-    },
-    "ar-SA": {
-        "name": "العربية",
-        "voices": {
-            "ar-SA-ZariyahNeural": "Zariyah",
-            "ar-SA-HamedNeural": "Hamed",
-        }
-    },
-    "hi-IN": {
-        "name": "हिन्दी",
-        "voices": {
-            "hi-IN-SwaraNeural": "Swara",
-            "hi-IN-MadhurNeural": "Madhur",
-        }
-    },
-    "th-TH": {
-        "name": "ไทย",
-        "voices": {
-            "th-TH-AcharaNeural": "Achara",
-            "th-TH-NiwatNeural": "Niwat",
-        }
-    },
-    "vi-VN": {
-        "name": "Tiếng Việt",
-        "voices": {
-            "vi-VN-HoaiMyNeural": "HoaiMy",
-            "vi-VN-NamMinhNeural": "NamMinh",
-        }
-    },
-    "id-ID": {
-        "name": "Bahasa Indonesia",
-        "voices": {
-            "id-ID-GadisNeural": "Gadis",
-            "id-ID-ArdiNeural": "Ardi",
-        }
-    },
-    "ms-MY": {
-        "name": "Bahasa Melayu",
-        "voices": {
-            "ms-MY-YasminNeural": "Yasmin",
-        }
-    },
-    "tr-TR": {
-        "name": "Türkçe",
-        "voices": {
-            "tr-TR-EmelNeural": "Emel",
-            "tr-TR-AhmetNeural": "Ahmet",
-        }
-    },
-    "nl-NL": {
-        "name": "Nederlands",
-        "voices": {
-            "nl-NL-FennaNeural": "Fenna",
-            "nl-NL-CoenNeural": "Coen",
-        }
-    },
-    "pl-PL": {
-        "name": "Polski",
-        "voices": {
-            "pl-PL-ZofiaNeural": "Zofia",
-            "pl-PL-JacekNeural": "Jacek",
-        }
-    },
-    "sv-SE": {
-        "name": "Svenska",
-        "voices": {
-            "sv-SE-SofieNeural": "Sofie",
-            "sv-SE-MattiasNeural": "Mattias",
-        }
-    },
-    "nb-NO": {
-        "name": "Norsk",
-        "voices": {
-            "nb-NO-PernilleNeural": "Pernille",
-            "nb-NO-FinnNeural": "Finn",
-        }
-    },
-    "da-DK": {
-        "name": "Dansk",
-        "voices": {
-            "da-DK-ChristelNeural": "Christel",
-            "da-DK-JeppeNeural": "Jeppe",
-        }
-    },
-    "fi-FI": {
-        "name": "Suomi",
-        "voices": {
-            "fi-FI-SelmaNeural": "Selma",
-            "fi-FI-HarriNeural": "Harri",
-        }
-    },
-    "el-GR": {
-        "name": "Ελληνικά",
-        "voices": {
-            "el-GR-AthinaNeural": "Athina",
-            "el-GR-NestorasNeural": "Nestoras",
-        }
-    },
-    "he-IL": {
-        "name": "עברית",
-        "voices": {
-            "he-IL-AvriNeural": "Avri",
-            "he-IL-HilaNeural": "Hila",
-        }
-    },
-}
+# Edge TTS Language to Voices Mapping (自动生成，避免重复维护)
+EDGE_TTS_LANGUAGES: Final = _build_edge_tts_languages()
 
 # Edge TTS Configuration Keys
 CONF_TTS_VOICE: Final = "voice"
@@ -641,6 +543,7 @@ CONF_STT_MODEL: Final = "model"
 # STT Default Parameters
 STT_DEFAULT_MODEL: Final = "FunAudioLLM/SenseVoiceSmall"
 
+
 # STT File Size Limits
 STT_MAX_FILE_SIZE_MB: Final = 25  # 最大文件大小 25MB
 
@@ -657,22 +560,54 @@ IMAGE_SIZES: Final = [
     "720x1440",
 ]
 
-# Available Models (Only Free Models)
+# Available Models (智谱AI官方完整列表)
 AI_HUB_CHAT_MODELS: Final = [
+    # 免费模型
     "GLM-4-Flash",          # GLM-4-Flash - 免费通用，128K/16K，免费
     "glm-4.5-flash",        # GLM-4.5-Flash - 免费通用模型，128K/16K，免费使用，解码速度20-25tokens/秒
     "GLM-4-Flash-250414",   # GLM-4-Flash-250414 - 免费通用，128K/16K，免费
     "GLM-Z1-Flash",         # GLM-Z1-Flash - 免费推理，128K/32K，免费
+
+    # GLM-4系列（高性价比收费模型）
+    "GLM-4-FlashX-250414",  # GLM-4-FlashX-250414 - 高速低价，128K/4K，0.1元/百万tokens
+    "GLM-4-Long",           # GLM-4-Long - 超长输入，1M/4K，1元/百万tokens
+    "GLM-4-Air",            # GLM-4-Air - 高性价比，128K/16K，0.5元/百万tokens
+    "GLM-4-Air-250414",     # GLM-4-Air-250414 - 高性价比，128K/16K，0.5元/百万tokens
+    "GLM-4-AirX",           # GLM-4-AirX - 极速推理，8K/4K，10元/百万tokens
+    "GLM-Z1-Air",           # GLM-Z1-Air - 轻量推理，128K/32K，0.5元/百万tokens
+    "GLM-Z1-AirX",          # GLM-Z1-AirX - 极速推理，32K/30K，5元/百万tokens
+    "GLM-Z1-FlashX-250414", # GLM-Z1-FlashX-250414 - 低价推理，128K/32K，0.5元/百万tokens
+
+    # GLM-4.5系列（主流收费模型）
+    "glm-4.5",              # GLM-4.5 - 通用最强大模型，输入长度[0,32]/输出[0,0.2]：1元
+    "glm-4.5-x",            # GLM-4.5-X - 高性能大模型，输入长度[0,32]/输出[0,0.2]：4元
+    "glm-4.5-air",          # GLM-4.5-Air - 轻量级模型，输入长度[0,32]/输出[0,0.2]：0.4元
+    "glm-4.5-airx",         # GLM-4.5-AirX - 快速推理模型，输入长度[0,32]/输出[0,0.2]：2元
+
+    # GLM-4系列（专业收费模型）
+    "GLM-4-Plus",           # GLM-4-Plus - 旧智能旗舰，128K/4K，5元/百万tokens
+    "GLM-4-0520",           # GLM-4-0520 - 稳定版本，128K/4K，100元/百万tokens
+    "GLM-4-AllTools",       # GLM-4-AllTools - 全能工具，128K/32K，1元/百万tokens
+    "GLM-4-Assistant",      # GLM-4-Assistant - 全智能体，128K/4K，5元/百万tokens
+    "GLM-4-CodeGeex-4",     # GLM-4-CodeGeex - 代码生成，128K/32K，0.1元/百万Tokens
+
+    # 特殊模型
+    "CharGLM-4",            # CharGLM-4 - 拟人对话，8K/4K，1元/百万tokens
+    "glm-zero-preview",     # glm-zero-preview - （无官方定价说明/暂未公开）
 ]
 
+# Image generation models (智谱AI官方列表)
 AI_HUB_IMAGE_MODELS: Final = [
     "cogview-3-flash",      # CogView-3 Flash (免费)
+    "cogview-3-plus",       # CogView-3 Plus (收费)
+    "cogview-3",            # CogView-3 (收费)
 ]
 
-# Vision Models (支持图像分析) - 仅免费模型
+# Vision models (支持图像分析) - 智谱AI官方列表
 VISION_MODELS: Final = [
-    "glm-4.1v-thinking-flash",  # glm-4.1v-thinking-flash - 更强的免费视觉模型（推荐）
-    "glm-4v-flash",       # GLM-4V-Flash - 免费视觉模型
+    "glm-4v-flash",       # GLM-4V-Flash - 免费视觉模型（推荐）
+    "glm-4v",            # GLM-4V - 收费视觉模型
+    "glm-4v-plus",        # GLM-4V-Plus - 收费视觉模型
 ]
 
 # Default Names
@@ -745,15 +680,17 @@ RECOMMENDED_TTS_OPTIONS: Final = {
     CONF_TTS_PITCH: TTS_DEFAULT_PITCH,
 }
 
-RECOMMENDED_STT_OPTIONS: Final = {
-    CONF_RECOMMENDED: True,
-    CONF_STT_MODEL: STT_DEFAULT_MODEL,
-}
 
 # Recommended Options for WeChat (simplified)
 RECOMMENDED_WECHAT_OPTIONS: Final = {
     CONF_RECOMMENDED: True,
     CONF_BEMFA_UID: "",
+}
+
+# Recommended Options for STT (simplified)
+RECOMMENDED_STT_OPTIONS: Final = {
+    CONF_RECOMMENDED: True,
+    CONF_STT_MODEL: STT_DEFAULT_MODEL,
 }
 
 # Recommended Options for Translation (simplified)

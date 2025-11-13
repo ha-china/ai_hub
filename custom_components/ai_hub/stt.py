@@ -18,6 +18,7 @@ import aiohttp
 
 from .const import (
     CONF_SILICONFLOW_API_KEY,
+    CONF_STT_MODEL,
     SILICONFLOW_ASR_URL,
     SILICONFLOW_STT_MODELS,
     STT_DEFAULT_MODEL,
@@ -150,6 +151,9 @@ class AIHubSpeechToTextEntity(SpeechToTextEntity, AIHubEntityBase):
 
             if model not in SILICONFLOW_STT_MODELS:
                 raise HomeAssistantError(f"不支持的模型: {model}")
+
+            # STT模型处理：所有模型都是免费的，不使用stream参数
+            _LOGGER.info("使用STT模型: %s", model)
 
             # Convert raw PCM data to WAV format if needed
             # Check if audio data already has a WAV header

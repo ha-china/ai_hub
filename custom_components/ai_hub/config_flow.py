@@ -92,7 +92,7 @@ from .const import (
     DEFAULT_STT_NAME,
     CONF_STT_MODEL,
     SILICONFLOW_STT_MODELS,
-    )
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -277,21 +277,25 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
             # Check if recommended mode has changed
             if user_input[CONF_RECOMMENDED] == self.last_rendered_recommended:
                 # Recommended mode unchanged, save the configuration
+
+                # Use user input directly (no complex model name processing needed)
+                processed_input = user_input.copy()
+
                 # Set LLM_HASS_API for conversation
                 if self._subentry_type == "conversation":
-                    user_input[CONF_LLM_HASS_API] = llm.LLM_API_ASSIST
+                    processed_input[CONF_LLM_HASS_API] = llm.LLM_API_ASSIST
 
                 # Update or create subentry
                 if self._is_new:
                     return self.async_create_entry(
-                        title=user_input.pop(CONF_NAME),
-                        data=user_input,
+                        title=processed_input.pop(CONF_NAME),
+                        data=processed_input,
                     )
 
                 return self.async_update_and_abort(
                     self._get_entry(),
                     self._get_reconfigure_subentry(),
-                    data=user_input,
+                    data=processed_input,
                 )
 
             # Recommended mode changed, re-render form with new options shown/hidden
@@ -302,6 +306,7 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
         schema = await ai_hub_config_option_schema(
             self._is_new, self._subentry_type, self.options
         )
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(schema),
@@ -310,6 +315,8 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
 
     async_step_reconfigure = async_step_init
     async_step_user = async_step_init
+
+
 
 
 async def ai_hub_config_option_schema(
@@ -500,6 +507,25 @@ async def ai_hub_config_option_schema(
         # Create language options from unique languages in EDGE_TTS_VOICES
         unique_languages = sorted(list(set(EDGE_TTS_VOICES.values())))
 
+        # Create voice options grouped by language for better UX
+        voice_options = []
+        # Group voices by language
+        languages = {}
+        for voice_id, lang_code in EDGE_TTS_VOICES.items():
+            if lang_code not in languages:
+                languages[lang_code] = []
+            languages[lang_code].append(voice_id)
+
+        # Sort voices within each language and create grouped options
+        for lang_code in sorted(languages.keys()):
+            # Add language separator
+            voice_options.append({"separator": True, "label": f"--- {lang_code.upper()} ---"})
+            # Add voices for this language
+            for voice_id in sorted(languages[lang_code]):
+                # Extract voice name for display
+                voice_name = voice_id.replace(f"{lang_code}-", "")
+                voice_options.append({"value": voice_id, "label": f"{voice_name} ({lang_code})"})
+
         schema.update({
             vol.Optional(
                 CONF_TTS_LANG,
@@ -509,6 +535,18 @@ async def ai_hub_config_option_schema(
                 SelectSelectorConfig(
                     options=unique_languages,
                     mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_TTS_VOICE,
+                default=options.get(CONF_TTS_VOICE, TTS_DEFAULT_VOICE),
+                description={"suggested_value": options.get(CONF_TTS_VOICE)},
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=voice_options,
+                    mode=SelectSelectorMode.DROPDOWN,
+                    custom_value=False,
+                    sort=False,
                 )
             ),
             vol.Optional(
