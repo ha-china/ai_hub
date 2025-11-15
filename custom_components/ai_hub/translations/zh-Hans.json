@@ -303,6 +303,24 @@
           "description": "自定义集成目录路径，默认为custom_components"
         }
       }
+    },
+    "translate_blueprints": {
+      "name": "Blueprint汉化",
+      "description": "汉化Home Assistant Blueprint文件的英文界面为中文",
+      "fields": {
+        "list_blueprints": {
+          "name": "列出Blueprint",
+          "description": "仅列出已导入的Blueprint文件及其翻译状态，不执行翻译操作"
+        },
+        "target_blueprint": {
+          "name": "指定Blueprint",
+          "description": "指定要汉化的Blueprint文件名（不含扩展名），留空则汉化所有Blueprint"
+        },
+        "force_translation": {
+          "name": "强制汉化",
+          "description": "无论中文翻译文件是否存在，都强制重新翻译并覆盖现有翻译"
+        }
+      }
     }
   },
   "title": "AI 合集"

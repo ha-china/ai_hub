@@ -13,6 +13,8 @@ import tempfile
 import time
 from pathlib import Path
 
+import yaml
+
 import aiohttp
 import requests
 import voluptuous as vol
@@ -53,6 +55,7 @@ from .const import (
     SERVICE_TTS_SPEECH,
     SERVICE_SEND_WECHAT_MESSAGE,
     SERVICE_TRANSLATE_COMPONENTS,
+    SERVICE_TRANSLATE_BLUEPRINTS,
     SILICONFLOW_ASR_URL,
     STT_MAX_FILE_SIZE_MB,
     TTS_DEFAULT_PITCH,
@@ -109,6 +112,13 @@ WECHAT_SCHEMA = {
 TRANSLATION_SCHEMA = {
     vol.Optional("list_components", default=False): cv.boolean,
     vol.Optional("target_component", default=""): cv.string,
+    vol.Optional("force_translation", default=False): cv.boolean,
+}
+
+# Schema for blueprints translation service
+BLUEPRINTS_TRANSLATION_SCHEMA = {
+    vol.Optional("list_blueprints", default=False): cv.boolean,
+    vol.Optional("target_blueprint", default=""): cv.string,
     vol.Optional("force_translation", default=False): cv.boolean,
 }
 
@@ -727,6 +737,51 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
                 "error": f"翻译服务错误: {exc}"
             }
 
+    async def handle_translate_blueprints(call: ServiceCall) -> dict:
+        """Handle blueprints translation service call."""
+        try:
+            # Get parameters
+            list_blueprints = call.data.get("list_blueprints", False)
+            target_blueprint = call.data.get("target_blueprint", "").strip()
+            # Use standard Home Assistant blueprints directory
+            blueprints_path = "/config/blueprints"
+            force_translation = call.data.get("force_translation", False)
+
+            # 仅列出模式不需要API密钥
+            if not list_blueprints:
+                # Check if Zhipu API key is available
+                if not has_zhipu_api_key():
+                    return {
+                        "success": False,
+                        "error": "智谱AI API密钥未配置，请先配置AI Hub集成"
+                    }
+
+            if list_blueprints:
+                _LOGGER.info("列出Blueprint文件...")
+            else:
+                _LOGGER.info("开始Blueprint翻译...")
+
+            # Run in background thread
+            result = await hass.async_add_executor_job(
+                translate_all_blueprints,
+                api_key if not list_blueprints else None,
+                force_translation,
+                target_blueprint,
+                list_blueprints
+            )
+
+            return {
+                "success": True,
+                "result": result
+            }
+
+        except Exception as exc:
+            _LOGGER.error("Blueprint翻译服务错误: %s", exc)
+            return {
+                "success": False,
+                "error": f"Blueprint翻译服务错误: {exc}"
+            }
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -773,6 +828,14 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
         SERVICE_TRANSLATE_COMPONENTS,
         handle_translate_components,
         schema=vol.Schema(TRANSLATION_SCHEMA),
+        supports_response=True
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TRANSLATE_BLUEPRINTS,
+        handle_translate_blueprints,
+        schema=vol.Schema(BLUEPRINTS_TRANSLATION_SCHEMA),
         supports_response=True
     )
 
@@ -1150,3 +1213,209 @@ def _translate_simple_text(text: str, api_key: str) -> str:
     except Exception as e:
         _LOGGER.error(f"Translation failed for '{text}': {e}")
         return text  # Return original on failure
+
+
+def translate_all_blueprints(api_key: str, force_translation: bool = False, target_blueprint: str = "", list_blueprints: bool = False) -> dict:
+    """Translate or list blueprints in the standard Home Assistant blueprints directory."""
+    # Use standard Home Assistant blueprints directory
+    blueprints_path = "/config/blueprints"
+    base_path = Path(blueprints_path)
+
+    if not base_path.exists() or not base_path.is_dir():
+        return {
+            "translated": 0,
+            "skipped": 0,
+            "error": f"Blueprints directory not found: {blueprints_path}"
+        }
+
+    _LOGGER.info(f"Scanning blueprints in: {base_path}")
+
+    # 如果是仅列出模式，扫描所有blueprints并返回信息
+    if list_blueprints:
+        all_blueprints = []
+        available_translations = []  # 已汉化的blueprints
+
+        # 递归查找所有YAML文件
+        for yaml_file in base_path.rglob("*.yaml"):
+            blueprint_info = {
+                "path": str(yaml_file.relative_to(base_path)),
+                "has_translation": False,
+                "name": ""
+            }
+
+            # 尝试读取blueprint名称并检查是否已汉化
+            try:
+                with open(yaml_file, 'r', encoding='utf-8') as f:
+                    blueprint_data = yaml.safe_load(f)
+                    if blueprint_data and 'blueprint' in blueprint_data:
+                        blueprint_info["name"] = blueprint_data['blueprint'].get('name', '')
+
+                        # 检查是否包含中文字符（简单判断是否已汉化）
+                        content_str = str(blueprint_data)
+                        has_chinese = any('\u4e00' <= char <= '\u9fff' for char in content_str)
+                        if has_chinese:
+                            blueprint_info["has_translation"] = True
+                            available_translations.append(str(yaml_file.relative_to(base_path)))
+            except Exception:
+                pass
+
+            all_blueprints.append(blueprint_info)
+
+        _LOGGER.info(f"Found {len(all_blueprints)} blueprints, {len(available_translations)} have translations")
+
+        return {
+            "mode": "list_only",
+            "total_blueprints": len(all_blueprints),
+            "available_translations": len(available_translations),
+            "all_blueprints": all_blueprints,
+            "blueprints_with_translations": available_translations,
+            "target_blueprint": target_blueprint
+        }
+
+    # 翻译模式
+    translated = 0
+    skipped = 0
+    translated_blueprints = []  # 记录具体翻译的blueprints
+    skipped_blueprints = []     # 记录跳过的blueprints
+
+    # 递归查找所有YAML文件
+    yaml_files = list(base_path.rglob("*.yaml"))
+
+    # 如果指定了目标blueprint，只处理该文件
+    if target_blueprint:
+        target_files = [f for f in yaml_files if f.name == target_blueprint or f.name == f"{target_blueprint}.yaml"]
+        if not target_files:
+            return {
+                "translated": 0,
+                "skipped": 0,
+                "error": f"Target blueprint not found: {target_blueprint}"
+            }
+        yaml_files = target_files
+        _LOGGER.info(f"Processing specific blueprint: {target_blueprint}")
+    else:
+        _LOGGER.info(f"Processing all blueprints ({len(yaml_files)} found)")
+
+    for yaml_file in yaml_files:
+        try:
+            # 检查是否已经汉化（包含中文字符）
+            if not force_translation:
+                try:
+                    with open(yaml_file, 'r', encoding='utf-8') as f:
+                        content_str = f.read()
+                        has_chinese = any('\u4e00' <= char <= '\u9fff' for char in content_str)
+                        if has_chinese:
+                            result = "skipped (already translated)"
+                            skipped += 1
+                            skipped_blueprints.append(str(yaml_file.relative_to(base_path)))
+                            _LOGGER.info(f"- Skipped {yaml_file.relative_to(base_path)} (already translated)")
+                            continue
+                except Exception:
+                    pass
+
+            result = translate_blueprint_file(yaml_file, api_key, force_translation)
+            if result == "translated":
+                translated += 1
+                translated_blueprints.append(str(yaml_file.relative_to(base_path)))
+                _LOGGER.info(f"✓ Successfully translated {yaml_file.relative_to(base_path)}")
+            else:
+                skipped += 1
+                skipped_blueprints.append(str(yaml_file.relative_to(base_path)))
+                _LOGGER.info(f"- Skipped {yaml_file.relative_to(base_path)} ({result})")
+        except Exception as e:
+            _LOGGER.error(f"Error processing {yaml_file}: {e}")
+            skipped += 1
+            skipped_blueprints.append(str(yaml_file.relative_to(base_path)))
+
+    return {
+        "mode": "translation",
+        "translated": translated,
+        "skipped": skipped,
+        "translated_blueprints": translated_blueprints,
+        "skipped_blueprints": skipped_blueprints,
+        "target_blueprint": target_blueprint
+    }
+
+
+def translate_blueprint_file(yaml_file: Path, api_key: str, force_translation: bool = False) -> str:
+    """Translate a single blueprint YAML file in-place."""
+    # Always translate the original file directly
+    _LOGGER.info(f"Translating {yaml_file.name}")
+
+    try:
+        # Load original YAML with custom constructor for Home Assistant tags
+        def home_assistant_constructor(loader, node):
+            if node.tag == '!input':
+                return f"!{loader.construct_scalar(node)}"
+            else:
+                return loader.construct_scalar(node)
+
+        yaml.SafeLoader.add_constructor('!input', home_assistant_constructor)
+        yaml.SafeLoader.add_constructor('!secret', home_assistant_constructor)
+        yaml.SafeLoader.add_constructor('!include', home_assistant_constructor)
+
+        with open(yaml_file, 'r', encoding='utf-8') as f:
+            blueprint_data = yaml.safe_load(f)
+
+        if not blueprint_data or 'blueprint' not in blueprint_data:
+            return "skipped (not a valid blueprint)"
+
+        # Translate the blueprint metadata in-place
+        blueprint_section = blueprint_data.get('blueprint', {})
+
+        # Translate name and description
+        if 'name' in blueprint_section and isinstance(blueprint_section['name'], str):
+            blueprint_section['name'] = translate_text(blueprint_section['name'], api_key)
+
+        if 'description' in blueprint_section and isinstance(blueprint_section['description'], str):
+            blueprint_section['description'] = translate_text(blueprint_section['description'], api_key)
+
+        # Translate input fields
+        if 'input' in blueprint_section and isinstance(blueprint_section['input'], dict):
+            translate_blueprint_inputs(blueprint_section['input'], api_key)
+
+        # Update the blueprint section
+        blueprint_data['blueprint'] = blueprint_section
+
+        # Save back to original file with custom dumper for Home Assistant tags
+        class HomeAssistantDumper(yaml.SafeDumper):
+            def represent_scalar(self, tag, value, style=None):
+                if isinstance(value, str) and value.startswith('!input'):
+                    # Handle Home Assistant input tags
+                    return super().represent_scalar('tag:yaml.org,2002:str', value, style)
+                return super().represent_scalar(tag, value, style)
+
+        # Save the translated content back to the original file
+        with open(yaml_file, 'w', encoding='utf-8') as f:
+            yaml.dump(blueprint_data, f, Dumper=HomeAssistantDumper, default_flow_style=False, allow_unicode=True, indent=2)
+
+        _LOGGER.info(f"Successfully translated {yaml_file.name}")
+        return "translated"
+
+    except Exception as e:
+        _LOGGER.error(f"Failed to translate {yaml_file.name}: {e}")
+        return "error"
+
+
+def translate_blueprint_inputs(inputs: dict, api_key: str) -> None:
+    """Translate input fields in a blueprint while preserving technical parameters."""
+    for input_key, input_config in inputs.items():
+        if not isinstance(input_config, dict):
+            continue
+
+        # Translate name and description
+        if 'name' in input_config and isinstance(input_config['name'], str):
+            input_config['name'] = translate_text(input_config['name'], api_key)
+
+        if 'description' in input_config and isinstance(input_config['description'], str):
+            input_config['description'] = translate_text(input_config['description'], api_key)
+
+        # Do not translate default values if they look like technical parameters
+        if 'default' in input_config:
+            default_val = input_config['default']
+            # Only translate if it's a descriptive string and not a technical parameter
+            if (isinstance(default_val, str) and
+                not default_val.startswith('{{') and
+                not default_val.isupper() and
+                not any(char in default_val for char in ['.', '_', '-']) and
+                len(default_val.split()) > 1):
+                input_config['default'] = translate_text(default_val, api_key)

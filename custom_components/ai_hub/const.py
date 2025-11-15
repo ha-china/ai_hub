@@ -708,6 +708,7 @@ SERVICE_TTS_SPEECH: Final = "tts_speech"
 SERVICE_STT_TRANSCRIBE: Final = "stt_transcribe"
 SERVICE_SEND_WECHAT_MESSAGE: Final = "send_wechat_message"
 SERVICE_TRANSLATE_COMPONENTS: Final = "translate_components"
+SERVICE_TRANSLATE_BLUEPRINTS: Final = "translate_blueprints"
 
 # Bemfa WeChat Configuration
 BEMFA_API_URL: Final = "https://apis.bemfa.com/vb/wechat/v1/wechatAlertJson"
