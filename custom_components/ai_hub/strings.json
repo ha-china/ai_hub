@@ -10,7 +10,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to AI Hub service",
+      "cannot_connect": "Cannot connect to service, please check URL and network",
       "invalid_auth": "Invalid API key",
       "unknown": "Unknown error",
       "api_key_required": "API key is required",
@@ -64,9 +64,12 @@
             "top_p": "Sampling parameter (0-1)",
             "max_tokens": "Maximum response length",
             "max_history_messages": "Number of history messages to keep",
-            "debug_log": "Enable debug logging for LLM requests and responses (verbose, for troubleshooting only)"
+            "debug_log": "Enable debug logging for LLM requests and responses. When enabled, detailed request/response/error logs will be output at WARNING level with [AI_HUB_DEBUG] prefix, ensuring visibility regardless of log settings (for troubleshooting only)"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "ai_task_data": {
@@ -97,6 +100,9 @@
             "max_tokens": "Maximum response length"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "tts": {
@@ -121,6 +127,9 @@
             "lang": "Select voice language, like zh-CN for Chinese"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "stt": {
@@ -147,6 +156,9 @@
             "custom_api_key": "Custom API key (leave empty to use main key)"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "translation": {
@@ -179,6 +191,9 @@
             "target_component": "Only translate the specified component"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "blueprint_translation": {

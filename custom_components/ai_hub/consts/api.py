@@ -33,7 +33,7 @@ TIMEOUTS: Final = {
     "translation_api": 60.0,
     "media_download": 30.0,
     "health_check": 10.0,
-    "config_flow_validation": 10.0,
+    "config_flow_validation": 30.0,
     "camera_image": 10.0,
     "automation_api": 30.0,
 }

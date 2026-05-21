@@ -17,14 +17,39 @@ from .markdown_filter import filter_markdown_streaming
 _LOGGER = logging.getLogger(__name__)
 
 
+def _try_parse_tool_call(tc: dict[str, Any]) -> llm.ToolInput | None:
+    """Try to parse a complete tool call. Returns None if arguments are incomplete JSON."""
+    try:
+        tool_id = tc["id"]
+        if not tool_id or not isinstance(tool_id, str) or not tool_id.strip():
+            tool_id = ulid.ulid_now()
+        args_str = tc["function"]["arguments"]
+        if not args_str:
+            args = {}
+        else:
+            args = json.loads(args_str)
+        return llm.ToolInput(
+            id=tool_id,
+            tool_name=tc["function"]["name"],
+            tool_args=args,
+        )
+    except json.JSONDecodeError:
+        return None
+
+
 async def transform_stream(
     response: aiohttp.ClientResponse,
 ) -> AsyncGenerator[
     conversation.AssistantContentDeltaDict | conversation.ToolResultContentDeltaDict
 ]:
-    """Transform AI Hub SSE stream into Home Assistant deltas."""
+    """Transform AI Hub SSE stream into Home Assistant deltas.
+    
+    Yields tool_calls as soon as their arguments are complete JSON,
+    allowing HA to start executing tools while stream continues.
+    """
     buffer = ""
     tool_call_buffer: dict[int, dict[str, Any]] = {}
+    yielded_tool_ids: set[str] = set()
     has_started = False
 
     async for chunk in response.content:
@@ -58,6 +83,7 @@ async def transform_stream(
             if "content" in delta and delta["content"]:
                 yield {"content": filter_markdown_streaming(delta["content"])}
             if "tool_calls" in delta:
+                ready_tool_calls: list[llm.ToolInput] = []
                 for tc_delta in delta["tool_calls"]:
                     index = tc_delta.get("index", 0)
                     if index not in tool_call_buffer:
@@ -82,24 +108,26 @@ async def transform_stream(
                             tool_call_buffer[index]["function"]["name"] = func["name"]
                         if "arguments" in func:
                             tool_call_buffer[index]["function"]["arguments"] += func["arguments"]
+                    
+                    tc = tool_call_buffer[index]
+                    if tc["id"] not in yielded_tool_ids and tc["function"]["name"]:
+                        parsed = _try_parse_tool_call(tc)
+                        if parsed:
+                            ready_tool_calls.append(parsed)
+                            yielded_tool_ids.add(tc["id"])
+                
+                if ready_tool_calls:
+                    yield {"tool_calls": ready_tool_calls}
 
-    if tool_call_buffer:
-        tool_calls = []
-        for tc in tool_call_buffer.values():
-            try:
-                tool_id = tc["id"]
-                if not tool_id or not isinstance(tool_id, str) or not tool_id.strip():
-                    tool_id = ulid.ulid_now()
-                args = json.loads(tc["function"]["arguments"]) if tc["function"]["arguments"] else {}
-                tool_calls.append(
-                    llm.ToolInput(
-                        id=tool_id,
-                        tool_name=tc["function"]["name"],
-                        tool_args=args,
-                    )
-                )
-            except json.JSONDecodeError as err:
-                _LOGGER.warning("Failed to parse tool call arguments: %s", err)
+    remaining_tool_calls: list[llm.ToolInput] = []
+    for tc in tool_call_buffer.values():
+        if tc["id"] in yielded_tool_ids:
+            continue
+        parsed = _try_parse_tool_call(tc)
+        if parsed:
+            remaining_tool_calls.append(parsed)
+        else:
+            _LOGGER.warning("Failed to parse tool call arguments for %s", tc["function"]["name"])
 
-        if tool_calls:
-            yield {"tool_calls": tool_calls}
+    if remaining_tool_calls:
+        yield {"tool_calls": remaining_tool_calls}

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any, Final
+from urllib.parse import urlparse
 
 from .api import AI_HUB_CHAT_URL, AI_HUB_IMAGE_GEN_URL, SILICONFLOW_ASR_URL
 from .base import DEFAULT_INSTRUCTIONS_PROMPT, LLM_API_ASSIST
@@ -91,8 +94,69 @@ def _short_model_name(model: str | None) -> str:
     return normalized.rsplit("/", 1)[-1]
 
 
-def _provider_display_name(provider: str | None) -> str:
-    """Return a concise provider display name."""
+def _load_ai_providers() -> dict[str, Any]:
+    """Load AI providers JSON."""
+    json_path = Path(__file__).parent / "ai_providers.json"
+    try:
+        with open(json_path, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {"providers": {"default": "OpenAI"}, "url_to_provider": {}}
+
+
+_AI_PROVIDERS: dict[str, Any] | None = None
+
+
+def _get_ai_providers() -> dict[str, Any]:
+    """Get cached AI providers data."""
+    global _AI_PROVIDERS
+    if _AI_PROVIDERS is None:
+        _AI_PROVIDERS = _load_ai_providers()
+    return _AI_PROVIDERS
+
+
+def _fuzzy_match_provider(host: str, providers: dict[str, str]) -> str | None:
+    """Fuzzy match provider by checking if provider id is a substring of host."""
+    host_lower = host.lower().replace("-", "").replace(".", "")
+    best_match = None
+    best_len = 0
+    for pid, name in providers.items():
+        if pid == "default":
+            continue
+        pid_clean = pid.lower().replace("-", "")
+        if pid_clean in host_lower and len(pid_clean) > best_len:
+            best_match = name
+            best_len = len(pid_clean)
+    return best_match
+
+
+def _resolve_provider_from_url(url: str | None) -> str:
+    """Resolve provider display name from URL using ai_providers.json."""
+    if not url:
+        return "OpenAI"
+    data = _get_ai_providers()
+    url_map = data.get("url_to_provider", {})
+    providers = data.get("providers", {})
+    try:
+        host = urlparse(url).hostname or ""
+    except Exception:
+        host = ""
+    if not host:
+        return providers.get(url_map.get("default", ""), "OpenAI")
+    if host in url_map:
+        provider_id = url_map[host]
+        return providers.get(provider_id, provider_id)
+    fuzzy = _fuzzy_match_provider(host, providers)
+    if fuzzy:
+        return fuzzy
+    default_id = url_map.get("default", "openai-compatible")
+    return providers.get(default_id, "OpenAI")
+
+
+def _provider_display_name(provider: str | None, url: str | None = None) -> str:
+    """Return a concise provider display name from URL matching."""
+    if url:
+        return _resolve_provider_from_url(url)
     provider_map = {
         "openai_compatible": "OpenAI",
         "anthropic_compatible": "Anthropic",
@@ -113,14 +177,16 @@ def get_default_service_name(name_type: str, options: dict[str, Any] | None = No
         return DEFAULT_NAMES["title"]
 
     options = options or {}
+    chat_url = options.get(CONF_CHAT_URL)
     if name_type == "conversation":
-        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER))}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
+        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
     if name_type == "ai_task":
-        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER))}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
+        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
     if name_type == "translation":
-        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER))}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
+        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
     if name_type == "stt":
-        return f"SiliconFlow/{_short_model_name(options.get(CONF_STT_MODEL))}"
+        stt_url = options.get(CONF_STT_URL)
+        return f"{_provider_display_name(None, stt_url)}/{_short_model_name(options.get(CONF_STT_MODEL))}"
     if name_type == "tts":
         return f"EdgeTTS/{_short_model_name(options.get(CONF_TTS_VOICE))}"
     return "AI Hub"

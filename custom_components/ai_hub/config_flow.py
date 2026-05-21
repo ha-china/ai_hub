@@ -151,7 +151,9 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
                     )
 
                 try:
-                    processed_input = user_input.copy()
+                    # Merge existing options with user input to preserve values not shown in current form
+                    # This is important when recommended mode hides advanced fields
+                    processed_input = {**self.options, **user_input}
 
                     if self._subentry_type == SUBENTRY_CONVERSATION:
                         processed_input[CONF_LLM_HASS_API] = [LLM_API_ASSIST]
@@ -179,11 +181,18 @@ class AIHubSubentryFlowHandler(ConfigSubentryFlow):
                     return self.async_update_and_abort(
                         self._get_entry(),
                         self._get_reconfigure_subentry(),
+                        title=get_default_subentry_name(
+                            self._subentry_type,
+                            processed_input,
+                        ),
                         data=processed_input,
                     )
 
             self.last_rendered_recommended = user_input[CONF_RECOMMENDED]
-            self.options.update(user_input)
+            # Preserve existing options when switching modes, only update fields present in user_input
+            # This ensures previously configured values are not lost when toggling recommended mode
+            for key, value in user_input.items():
+                self.options[key] = value
 
         self.chat_model_options = await async_discover_chat_models(self.options)
 

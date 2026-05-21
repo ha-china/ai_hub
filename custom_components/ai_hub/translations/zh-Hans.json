@@ -10,9 +10,11 @@
       }
     },
     "error": {
-      "cannot_connect": "无法连接到AI Hub服务",
+      "cannot_connect": "无法连接到服务，请检查地址和网络",
       "invalid_auth": "API密钥无效",
-      "unknown": "未知错误"
+      "unknown": "未知错误",
+      "api_key_required": "需要API密钥",
+      "invalid_input": "输入无效"
     },
     "abort": {
       "already_configured": "此API密钥已经配置"
@@ -69,9 +71,12 @@
             "max_tokens": "最大响应长度",
             "max_history_messages": "保留的历史消息数量",
             "enable_thinking": "为支持思维链的模型启用思维模式",
-            "debug_log": "启用 LLM 请求和响应的详细调试日志（仅用于排查问题，日常请关闭）"
+            "debug_log": "启用 LLM 请求和响应的调试日志。开启后，详细的请求/响应/错误日志将以 WARNING 级别输出，带有 [AI_HUB_DEBUG] 前缀，确保无论日志设置如何都能显示（仅用于排查问题）"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "重新配置成功"
       }
     },
     "ai_task_data": {
@@ -102,6 +107,9 @@
             "max_tokens": "最大响应长度"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "重新配置成功"
       }
     },
     "tts": {
@@ -126,6 +134,9 @@
             "lang": "选择语音语言，如zh-CN代表中文"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "重新配置成功"
       }
     },
     "stt": {
@@ -152,6 +163,9 @@
             "custom_api_key": "自定义API密钥（留空使用主密钥）"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "重新配置成功"
       }
     },
     "translation": {
@@ -184,6 +198,34 @@
             "target_component": "只汉化指定组件"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "重新配置成功"
+      }
+    },
+    "blueprint_translation": {
+      "initiate_flow": {
+        "user": "添加蓝图翻译",
+        "reconfigure": "重新配置蓝图翻译"
+      },
+      "entry_type": "AI Hub 蓝图翻译",
+      "step": {
+        "init": {
+          "title": "配置蓝图翻译",
+          "description": "配置蓝图翻译功能。使用硅基流动AI自动将英文蓝图文件翻译为中文。",
+          "data": {
+            "name": "名称",
+            "recommended": "推荐模式",
+            "custom_components_path": "自定义组件路径"
+          },
+          "data_description": {
+            "recommended": "使用推荐设置",
+            "custom_components_path": "自定义集成目录路径，默认为 custom_components"
+          }
+        }
+      },
+      "abort": {
+        "blueprint_translation_no_reconfigure": "蓝图翻译不支持重新配置。如需修改设置，请删除后重新添加。"
       }
     }
   },
@@ -329,6 +371,10 @@
         "target_component": {
           "name": "目标组件",
           "description": "指定要翻译的组件目录名；留空则翻译所有组件"
+        },
+        "custom_components_path": {
+          "name": "路径",
+          "description": "自定义集成目录路径，默认为 custom_components"
         }
       }
     }

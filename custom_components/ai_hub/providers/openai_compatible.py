@@ -870,11 +870,11 @@ class OpenAICompatibleProvider(LLMProvider):
         )
 
     def _log_request_payload(self, request: dict[str, Any]) -> None:
-        """Log full request payload at INFO level for debugging."""
+        """Log full request payload for debugging (uses WARNING level to ensure visibility)."""
         try:
             msgs = request.get("messages") or request.get("input") or []
             tools = request.get("tools") or []
-            _LOGGER.info(
+            _LOGGER.warning(
                 "[AI_HUB_DEBUG] request model=%s stream=%s msg_count=%d tool_count=%d",
                 request.get("model", "?"),
                 request.get("stream", False),
@@ -891,19 +891,19 @@ class OpenAICompatibleProvider(LLMProvider):
                 tc_info = f" tool_calls={json.dumps(tc, ensure_ascii=False)}" if tc else ""
                 extra_keys = {k: msg[k] for k in msg if k not in ("role", "content", "tool_calls")}
                 extra_info = f" extra={json.dumps(extra_keys, ensure_ascii=False, default=str)}" if extra_keys else ""
-                _LOGGER.info(
+                _LOGGER.warning(
                     "[AI_HUB_DEBUG]   msg[%d] role=%s content=%s%s%s",
                     i, role, content_preview, tc_info, extra_info,
                 )
             if tools:
                 for i, tool in enumerate(tools):
-                    _LOGGER.info(
+                    _LOGGER.warning(
                         "[AI_HUB_DEBUG]   tool[%d] %s",
                         i,
                         json.dumps(tool, ensure_ascii=False)[:500],
                     )
         except Exception:
-            _LOGGER.info("[AI_HUB_DEBUG] failed to log request payload", exc_info=True)
+            _LOGGER.warning("[AI_HUB_DEBUG] failed to log request payload", exc_info=True)
 
     async def _perform_request(
         self,
@@ -942,12 +942,35 @@ class OpenAICompatibleProvider(LLMProvider):
                 )
                 if self.config.debug_log:
                     try:
+                        # Log cache hit info if available
+                        usage = data.get("usage", {})
+                        if isinstance(usage, dict):
+                            cache_info = ""
+                            # OpenAI style: prompt_tokens_details.cached_tokens
+                            details = usage.get("prompt_tokens_details", {})
+                            if isinstance(details, dict) and details.get("cached_tokens"):
+                                cached = details["cached_tokens"]
+                                total = usage.get("prompt_tokens", 0)
+                                hit_rate = (cached / total * 100) if total > 0 else 0
+                                cache_info = f" cache_hit={cached}/{total}({hit_rate:.1f}%)"
+                            # DeepSeek style: prompt_cache_hit_tokens
+                            elif usage.get("prompt_cache_hit_tokens"):
+                                cached = usage["prompt_cache_hit_tokens"]
+                                total = usage.get("prompt_tokens", 0)
+                                hit_rate = (cached / total * 100) if total > 0 else 0
+                                cache_info = f" cache_hit={cached}/{total}({hit_rate:.1f}%)"
+                            _LOGGER.warning(
+                                "[AI_HUB_DEBUG] response tokens: in=%s out=%s%s",
+                                usage.get("prompt_tokens", usage.get("input_tokens", "?")),
+                                usage.get("completion_tokens", usage.get("output_tokens", "?")),
+                                cache_info,
+                            )
                         resp_preview = json.dumps(data, ensure_ascii=False, default=str)
                         if len(resp_preview) > 3000:
                             resp_preview = resp_preview[:3000] + "...[truncated]"
-                        _LOGGER.info("[AI_HUB_DEBUG] response: %s", resp_preview)
+                        _LOGGER.warning("[AI_HUB_DEBUG] response: %s", resp_preview)
                     except Exception:
-                        _LOGGER.info("[AI_HUB_DEBUG] response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
+                        _LOGGER.warning("[AI_HUB_DEBUG] response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
                 return data
             except _RETRYABLE_DISCONNECT_ERRORS as err:
                 last_error = err
@@ -1015,6 +1038,7 @@ class OpenAICompatibleProvider(LLMProvider):
         Returns:
             LLMResponse containing the generated content
         """
+        request = self._build_request(messages, stream=False, tools=tools, **kwargs)
         headers = self._get_headers()
         url = self._get_api_url()
 
@@ -1033,6 +1057,11 @@ class OpenAICompatibleProvider(LLMProvider):
                 ssl=_get_ssl_setting(url),
             )
         except Exception as err:
+            if self.config.debug_log:
+                _LOGGER.warning(
+                    "[AI_HUB_DEBUG] API error: %s url=%s model=%s",
+                    err, url, request.get("model", "?"),
+                )
             if not self._supports_tool_compat_retry(err, tools):
                 raise
 
@@ -1083,7 +1112,7 @@ class OpenAICompatibleProvider(LLMProvider):
         url = self._get_api_url()
         ssl = _get_ssl_setting(url)
         if self.config.debug_log:
-            _LOGGER.info("[AI_HUB_DEBUG] complete_stream url=%s", url)
+            _LOGGER.warning("[AI_HUB_DEBUG] complete_stream url=%s model=%s", url, request.get("model", "?"))
 
         buffer = ""
         tool_call_buffer: dict[int, dict[str, Any]] = {}

@@ -10,7 +10,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to AI Hub service",
+      "cannot_connect": "Cannot connect to service, please check URL and network",
       "invalid_auth": "Invalid API key",
       "unknown": "Unknown error"
     },
@@ -69,9 +69,12 @@
             "max_tokens": "Maximum response length",
             "max_history_messages": "Number of history messages to keep",
             "enable_thinking": "Enable thinking mode for models that support chain-of-thought",
-            "debug_log": "Enable debug logging for LLM requests and responses (verbose, for troubleshooting only)"
+            "debug_log": "Enable debug logging for LLM requests and responses. When enabled, detailed request/response/error logs will be output at WARNING level with [AI_HUB_DEBUG] prefix, ensuring visibility regardless of log settings (for troubleshooting only)"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "ai_task_data": {
@@ -102,6 +105,9 @@
             "max_tokens": "Maximum response length"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "tts": {
@@ -126,6 +132,9 @@
             "lang": "Select voice language, like zh-CN for Chinese"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "stt": {
@@ -152,6 +161,9 @@
             "custom_api_key": "Custom API key (leave empty to use main key)"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
       }
     },
     "translation": {
@@ -184,6 +196,34 @@
             "target_component": "Only translate the specified component"
           }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Reconfiguration was successful"
+      }
+    },
+    "blueprint_translation": {
+      "initiate_flow": {
+        "user": "Add Blueprint Translation",
+        "reconfigure": "Reconfigure Blueprint Translation"
+      },
+      "entry_type": "AI Hub Blueprint Translation",
+      "step": {
+        "init": {
+          "title": "Configure Blueprint Translation",
+          "description": "Configure blueprint translation function. Use SiliconFlow AI to automatically translate English blueprint files to Chinese.",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended Mode",
+            "custom_components_path": "Custom Components Path"
+          },
+          "data_description": {
+            "recommended": "Use recommended settings",
+            "custom_components_path": "Custom integration directory path, default is custom_components"
+          }
+        }
+      },
+      "abort": {
+        "blueprint_translation_no_reconfigure": "Blueprint translation does not support reconfiguration. To modify settings, please delete and re-add."
       }
     }
   },

@@ -65,17 +65,56 @@ class AnthropicCompatibleProvider(LLMProvider):
             return f"{normalized}/messages"
         return f"{normalized}/v1/messages"
 
-    def _convert_content_blocks(self, content: str | list[dict[str, Any]]) -> str | list[dict[str, Any]]:
+    def _convert_content_blocks_for_assistant(self, content: str | list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Convert content blocks for assistant messages, preserving thinking with signature."""
+        # Handle JSON-encoded content blocks (from ensure_string serialization)
         if isinstance(content, str):
-            return content
+            if content.startswith("[") and content.endswith("]"):
+                try:
+                    parsed = json.loads(content)
+                    if isinstance(parsed, list):
+                        content = parsed
+                except json.JSONDecodeError:
+                    pass
+            if isinstance(content, str):
+                return [{"type": "text", "text": content}] if content else []
 
         blocks: list[dict[str, Any]] = []
         for part in content:
+            block_type = part.get("type")
+            if block_type == "text":
+                text = str(part.get("text", ""))
+                if text:
+                    blocks.append({"type": "text", "text": text})
+            elif block_type == "thinking":
+                # Anthropic requires signature for thinking blocks in input
+                thinking = str(part.get("thinking", ""))
+                signature = part.get("signature")
+                if thinking and signature:
+                    blocks.append({"type": "thinking", "thinking": thinking, "signature": signature})
+                # Skip thinking without signature (can't be sent back)
+            # tool_use handled separately via tool_calls attribute
+        return blocks
+
+    def _extract_text_content(self, content: str | list[dict[str, Any]]) -> str:
+        """Extract text content only for user messages."""
+        # Handle JSON-encoded content blocks
+        if isinstance(content, str):
+            if content.startswith("[") and content.endswith("]"):
+                try:
+                    parsed = json.loads(content)
+                    if isinstance(parsed, list):
+                        content = parsed
+                except json.JSONDecodeError:
+                    pass
+            if isinstance(content, str):
+                return content
+
+        text_parts: list[str] = []
+        for part in content:
             if part.get("type") == "text":
-                blocks.append({"type": "text", "text": str(part.get("text", ""))})
-            elif part.get("type") == "thinking":
-                blocks.append({"type": "thinking", "thinking": str(part.get("thinking", ""))})
-        return blocks or ""
+                text_parts.append(str(part.get("text", "")))
+        return "".join(text_parts)
 
     def _convert_messages(self, messages: list[LLMMessage]) -> tuple[str | None, list[dict[str, Any]]]:
         system_parts: list[str] = []
@@ -88,22 +127,18 @@ class AnthropicCompatibleProvider(LLMProvider):
                 continue
 
             if message.role in {"user", "assistant"}:
-                content = self._convert_content_blocks(message.content)
                 if message.role == "assistant":
-                    content_blocks: list[dict[str, Any]] = []
-                    if isinstance(content, str):
-                        if content:
-                            content_blocks.append({"type": "text", "text": content})
-                    elif isinstance(content, list):
-                        content_blocks = list(content)
-                    else:
-                        if content:
-                            content_blocks.append({"type": "text", "text": str(content)})
+                    content_blocks = self._convert_content_blocks_for_assistant(message.content)
 
-                    # Anthropic extended thinking: thinking must be in content array
+                    # Add reasoning_content as thinking block for compatible APIs (e.g., Xiaomi)
+                    # Note: Some APIs require signature, some don't. We add a placeholder.
                     reasoning = getattr(message, "reasoning_content", None)
-                    if reasoning:
-                        content_blocks.insert(0, {"type": "thinking", "thinking": reasoning})
+                    if reasoning and not any(b.get("type") == "thinking" for b in content_blocks):
+                        content_blocks.insert(0, {
+                            "type": "thinking",
+                            "thinking": reasoning,
+                            "signature": "placeholder_sig"  # Required by some Anthropic-compatible APIs
+                        })
 
                     if message.tool_calls:
                         for tool_call in message.tool_calls:
@@ -128,6 +163,7 @@ class AnthropicCompatibleProvider(LLMProvider):
                         "content": content_blocks if content_blocks else "",
                     }
                 else:
+                    content = self._extract_text_content(message.content)
                     anthropic_message = {
                         "role": message.role,
                         "content": content,
@@ -299,6 +335,65 @@ class AnthropicCompatibleProvider(LLMProvider):
             )
         return tool_calls or None
 
+    def _apply_cache_control(
+        self,
+        system: str | None,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None,
+    ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]] | None]:
+        """Apply cache_control to maximize prompt caching.
+        
+        Anthropic prompt caching strategy:
+        1. Cache system prompt (if >= 1024 tokens, ~4KB text)
+        2. Cache tools definition
+        3. Cache last 2 user messages (conversation context)
+        
+        This can reduce costs by up to 90% for repeated conversations.
+        """
+        CACHE_CONTROL = {"type": "ephemeral"}
+        MIN_CACHE_CHARS = 4000  # ~1024 tokens
+        
+        # 1. Cache system prompt if large enough
+        cached_system = system
+        if system and len(system) >= MIN_CACHE_CHARS:
+            cached_system = [
+                {"type": "text", "text": system, "cache_control": CACHE_CONTROL}
+            ]
+        
+        # 2. Cache tools (they're usually stable across turns)
+        cached_tools = tools
+        if tools and len(tools) > 0:
+            cached_tools = tools.copy()
+            cached_tools[-1] = {**cached_tools[-1], "cache_control": CACHE_CONTROL}
+        
+        # 3. Cache last 2 user messages for conversation context
+        cached_messages = messages.copy()
+        cache_count = 0
+        for i in range(len(cached_messages) - 1, -1, -1):
+            if cache_count >= 2:
+                break
+            msg = cached_messages[i]
+            if msg.get("role") != "user":
+                continue
+            content = msg.get("content")
+            if isinstance(content, list) and len(content) > 0:
+                # Add cache_control to last content block
+                new_content = content.copy()
+                last_block = new_content[-1].copy()
+                last_block["cache_control"] = CACHE_CONTROL
+                new_content[-1] = last_block
+                cached_messages[i] = {**msg, "content": new_content}
+                cache_count += 1
+            elif isinstance(content, str) and len(content) >= MIN_CACHE_CHARS:
+                # Convert string to content block with cache_control
+                cached_messages[i] = {
+                    **msg,
+                    "content": [{"type": "text", "text": content, "cache_control": CACHE_CONTROL}]
+                }
+                cache_count += 1
+        
+        return cached_system, cached_messages, cached_tools
+
     def _build_request(
         self,
         messages: list[LLMMessage],
@@ -307,19 +402,25 @@ class AnthropicCompatibleProvider(LLMProvider):
         **kwargs: Any,
     ) -> dict[str, Any]:
         system, anthropic_messages = self._convert_messages(messages)
+        anthropic_tools = self._convert_tools(tools)
+        
+        # Apply cache control for prompt caching optimization
+        cached_system, cached_messages, cached_tools = self._apply_cache_control(
+            system, anthropic_messages, anthropic_tools
+        )
+        
         request: dict[str, Any] = {
             "model": self.config.model,
-            "messages": anthropic_messages,
+            "messages": cached_messages,
             "stream": stream,
             "temperature": self.config.temperature,
             "max_tokens": self.config.max_tokens,
         }
-        if system:
-            request["system"] = system
+        if cached_system:
+            request["system"] = cached_system
 
-        anthropic_tools = self._convert_tools(tools)
-        if anthropic_tools:
-            request["tools"] = anthropic_tools
+        if cached_tools:
+            request["tools"] = cached_tools
 
         if self.config.enable_thinking and "thinking" not in self.config.extra:
             request["thinking"] = {"type": "enabled", "budget_tokens": self.config.max_tokens}
@@ -330,7 +431,7 @@ class AnthropicCompatibleProvider(LLMProvider):
             try:
                 msgs = request.get("messages", [])
                 tools = request.get("tools", [])
-                _LOGGER.info(
+                _LOGGER.debug(
                     "[AI_HUB_DEBUG] anthropic request model=%s stream=%s msg_count=%d tool_count=%d",
                     request.get("model", "?"), request.get("stream", False), len(msgs), len(tools),
                 )
@@ -340,9 +441,9 @@ class AnthropicCompatibleProvider(LLMProvider):
                     preview = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False, default=str)
                     if len(preview) > 2000:
                         preview = preview[:2000] + f"...[truncated, total {len(preview)}]"
-                    _LOGGER.info("[AI_HUB_DEBUG]   msg[%d] role=%s content=%s", i, role, preview)
+                    _LOGGER.warning("[AI_HUB_DEBUG]   msg[%d] role=%s content=%s", i, role, preview)
             except Exception:
-                _LOGGER.info("[AI_HUB_DEBUG] failed to log anthropic request", exc_info=True)
+                _LOGGER.warning("[AI_HUB_DEBUG] failed to log anthropic request", exc_info=True)
         return request
 
     async def complete(
@@ -356,28 +457,55 @@ class AnthropicCompatibleProvider(LLMProvider):
         url = self._get_api_url()
         ssl = resolve_ssl_setting(url, _DEFAULT_API_URL)
 
-        data = await async_post_json(
-            url,
-            payload=request,
-            headers=headers,
-            ssl=ssl,
-            timeout=self.config.timeout,
-            error_label="API error",
-        )
+        try:
+            data = await async_post_json(
+                url,
+                payload=request,
+                headers=headers,
+                ssl=ssl,
+                timeout=self.config.timeout,
+                error_label="API error",
+            )
+        except Exception as err:
+            if self.config.debug_log:
+                _LOGGER.warning(
+                    "[AI_HUB_DEBUG] anthropic API error: %s url=%s model=%s",
+                    err, url, request.get("model", "?"),
+                )
+            raise
         if self.config.debug_log:
             try:
+                # Log cache hit info for Anthropic
+                raw_usage = data.get("usage", {})
+                if isinstance(raw_usage, dict):
+                    cache_info = ""
+                    cache_read = raw_usage.get("cache_read_input_tokens", 0)
+                    cache_write = raw_usage.get("cache_creation_input_tokens", 0)
+                    input_tokens = raw_usage.get("input_tokens", 0)
+                    if cache_read or cache_write:
+                        total = input_tokens + cache_read + cache_write
+                        hit_rate = (cache_read / total * 100) if total > 0 else 0
+                        cache_info = f" cache_read={cache_read} cache_write={cache_write} hit_rate={hit_rate:.1f}%"
+                    _LOGGER.warning(
+                        "[AI_HUB_DEBUG] anthropic tokens: in=%s out=%s%s",
+                        input_tokens,
+                        raw_usage.get("output_tokens", "?"),
+                        cache_info,
+                    )
                 resp_preview = json.dumps(data, ensure_ascii=False, default=str)
                 if len(resp_preview) > 3000:
                     resp_preview = resp_preview[:3000] + "...[truncated]"
-                _LOGGER.info("[AI_HUB_DEBUG] anthropic response: %s", resp_preview)
+                _LOGGER.warning("[AI_HUB_DEBUG] anthropic response: %s", resp_preview)
             except Exception:
-                _LOGGER.info("[AI_HUB_DEBUG] anthropic response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
+                _LOGGER.warning("[AI_HUB_DEBUG] anthropic response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
 
         usage = data.get("usage")
         if isinstance(usage, dict):
             usage = {
                 "input_tokens": usage.get("input_tokens", 0),
                 "output_tokens": usage.get("output_tokens", 0),
+                "cache_read_input_tokens": usage.get("cache_read_input_tokens", 0),
+                "cache_creation_input_tokens": usage.get("cache_creation_input_tokens", 0),
             }
 
         text_content = self._extract_response_text(data)
@@ -408,7 +536,7 @@ class AnthropicCompatibleProvider(LLMProvider):
         url = self._get_api_url()
         ssl = resolve_ssl_setting(url, _DEFAULT_API_URL)
         if self.config.debug_log:
-            _LOGGER.info("[AI_HUB_DEBUG] anthropic complete_stream url=%s", url)
+            _LOGGER.warning("[AI_HUB_DEBUG] anthropic complete_stream url=%s", url)
 
         buffer = ""
         tool_call_buffer: dict[int, dict[str, Any]] = {}
