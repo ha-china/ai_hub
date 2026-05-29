@@ -132,7 +132,7 @@ class AIHubTaskEntity(
 
         final_model = configured_model
         if chat_log_has_media_attachments(chat_log):
-            vision_models = ["glm-4.6v-flash", "glm-4.1v-thinking-flash", "glm-4v-flash"]  # Use free vision models
+            vision_models = [RECOMMENDED_IMAGE_ANALYSIS_MODEL]
             final_model = select_media_model(
                 configured_model,
                 vision_models,

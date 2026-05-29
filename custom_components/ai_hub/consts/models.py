@@ -36,10 +36,7 @@ AI_HUB_IMAGE_MODELS: Final = [
 ]
 
 VISION_MODELS: Final = [
-    "THUDM/GLM-4.1V-9B-Thinking",
-    "Qwen/Qwen2-VL-72B-Instruct",
-    "Qwen/Qwen2-VL-7B-Instruct",
-    "meta-llama/Llama-3.2-11B-Vision-Instruct",
+    "Qwen/Qwen3.5-4B",
 ]
 
 IMAGE_SIZES: Final = [

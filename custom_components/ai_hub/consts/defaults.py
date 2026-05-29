@@ -47,7 +47,7 @@ RECOMMENDED: Final[dict[str, Any]] = {
     "ai_task_top_p": 0.7,
     "ai_task_max_tokens": 8192,
     "image_model": "Kwai-Kolors/Kolors",
-    "image_analysis_model": "THUDM/GLM-4.1V-9B-Thinking",
+    "image_analysis_model": "Qwen/Qwen3.5-4B",
     "tts_voice": "zh-CN-XiaoxiaoNeural",
     "stt_model": "FunAudioLLM/SenseVoiceSmall",
 }

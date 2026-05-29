@@ -206,7 +206,7 @@ class AIHubBaseLLMEntity(Entity, _AIHubEntityMixin):
         # Check if we need to switch to vision model
         final_model = configured_model
         if chat_log and chat_log_has_media_attachments(chat_log):
-            vision_models = ["glm-4.1v-thinking", "glm-4v-flash"]
+            vision_models = [RECOMMENDED_IMAGE_ANALYSIS_MODEL]
             final_model = select_media_model(
                 configured_model,
                 vision_models,
