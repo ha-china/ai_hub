@@ -403,10 +403,12 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if entry.version == 2 and entry.minor_version == 2:
         # Migrate from version 2.2 to version 2.3
-        # Force the AI Task subentry title to the fixed name "AI Task" so that
-        # the resulting entity_id (ai_task.ai_task) is stable and no longer
-        # depends on the provider/model, which previously broke automations
-        # referencing this entity when the model or provider changed.
+        # Force the AI Task subentry title to the fixed name "AI Task" and
+        # rename the existing AI Task entity_registry entry to the fixed
+        # entity_id `ai_task.ai_task`. Previously the entity_id was derived
+        # from the provider/model (e.g. `ai_task.siliconflow_qwen3_8b`) and
+        # changed whenever the model or provider changed, breaking automations
+        # that referenced the entity by entity_id.
         from .consts import SUBENTRY_AI_TASK
 
         fixed_ai_task_title = "AI Task"
@@ -420,27 +422,39 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     title=fixed_ai_task_title,
                 )
 
-        # Remove any stale AI Task entity_registry entries whose entity_id was
-        # derived from the old provider/model-based subentry title (e.g.
-        # `ai_task.siliconflow_qwen3_8b`). After the subentry title is changed
-        # above, the platform will be reloaded and the entity will be recreated
-        # with the fixed entity_id `ai_task.ai_task` (slug of _attr_name).
-        # Doing this in the migration (before platform setup) avoids the
-        # undefined behavior of removing an entity from its own platform setup.
+        # Rename the existing AI Task entity_registry entry to the fixed
+        # entity_id `ai_task.ai_task` (domain must stay the same; the public
+        # `async_update_entity(new_entity_id=...)` enforces this and is the
+        # supported way to rename an entity_id in-place, preserving state).
         target_ai_task_entity_id = "ai_task.ai_task"
+        registry = er.async_get(hass)
         for entity_entry in er.async_entries_for_config_entry(
-            er.async_get(hass), entry.entry_id
+            registry, entry.entry_id
         ):
             if entity_entry.domain != "ai_task":
                 continue
             if entity_entry.entity_id == target_ai_task_entity_id:
                 continue  # Already the fixed entity_id; keep it.
-            er.async_get(hass).async_remove(entity_entry.entity_id)
-            _LOGGER.info(
-                "Removed stale AI Task entity %s; will be recreated as %s",
-                entity_entry.entity_id,
-                target_ai_task_entity_id,
-            )
+            try:
+                registry.async_update_entity(
+                    entity_entry.entity_id,
+                    new_entity_id=target_ai_task_entity_id,
+                )
+                _LOGGER.info(
+                    "Pinned AI Task entity_id: %s -> %s",
+                    entity_entry.entity_id,
+                    target_ai_task_entity_id,
+                )
+            except ValueError as err:
+                # The target entity_id may already be taken by another (e.g.
+                # a freshly-set-up) AI Task entity, or another entry on the
+                # same domain. Log and continue rather than failing migration.
+                _LOGGER.warning(
+                    "Failed to pin AI Task entity_id %s -> %s: %s",
+                    entity_entry.entity_id,
+                    target_ai_task_entity_id,
+                    err,
+                )
 
         hass.config_entries.async_update_entry(
             entry,
