@@ -401,4 +401,52 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         _LOGGER.debug("Migration to version %s.%s successful", entry.version, entry.minor_version)
 
+    if entry.version == 2 and entry.minor_version == 2:
+        # Migrate from version 2.2 to version 2.3
+        # Force the AI Task subentry title to the fixed name "AI Task" so that
+        # the resulting entity_id (ai_task.ai_task) is stable and no longer
+        # depends on the provider/model, which previously broke automations
+        # referencing this entity when the model or provider changed.
+        from .consts import SUBENTRY_AI_TASK
+
+        fixed_ai_task_title = "AI Task"
+        for subentry in entry.subentries.values():
+            if subentry.subentry_type != SUBENTRY_AI_TASK:
+                continue
+            if subentry.title != fixed_ai_task_title:
+                hass.config_entries.async_update_subentry(
+                    entry,
+                    subentry.subentry_id,
+                    title=fixed_ai_task_title,
+                )
+
+        # Remove any stale AI Task entity_registry entries whose entity_id was
+        # derived from the old provider/model-based subentry title (e.g.
+        # `ai_task.siliconflow_qwen3_8b`). After the subentry title is changed
+        # above, the platform will be reloaded and the entity will be recreated
+        # with the fixed entity_id `ai_task.ai_task` (slug of _attr_name).
+        # Doing this in the migration (before platform setup) avoids the
+        # undefined behavior of removing an entity from its own platform setup.
+        target_ai_task_entity_id = "ai_task.ai_task"
+        for entity_entry in er.async_entries_for_config_entry(
+            er.async_get(hass), entry.entry_id
+        ):
+            if entity_entry.domain != "ai_task":
+                continue
+            if entity_entry.entity_id == target_ai_task_entity_id:
+                continue  # Already the fixed entity_id; keep it.
+            er.async_get(hass).async_remove(entity_entry.entity_id)
+            _LOGGER.info(
+                "Removed stale AI Task entity %s; will be recreated as %s",
+                entity_entry.entity_id,
+                target_ai_task_entity_id,
+            )
+
+        hass.config_entries.async_update_entry(
+            entry,
+            minor_version=3,
+        )
+
+        _LOGGER.debug("Migration to version %s.%s successful", entry.version, entry.minor_version)
+
     return True

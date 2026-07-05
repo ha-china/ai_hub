@@ -181,7 +181,7 @@ def get_default_service_name(name_type: str, options: dict[str, Any] | None = No
     if name_type == "conversation":
         return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
     if name_type == "ai_task":
-        return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
+        return "AI Task"
     if name_type == "translation":
         return f"{_provider_display_name(options.get(CONF_LLM_PROVIDER), chat_url)}/{_short_model_name(options.get(CONF_CHAT_MODEL))}"
     if name_type == "stt":

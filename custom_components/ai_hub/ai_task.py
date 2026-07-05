@@ -11,6 +11,7 @@ from homeassistant.components import ai_task, conversation
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .consts import (
@@ -69,8 +70,9 @@ async def async_setup_entry(
         if subentry.subentry_type != SUBENTRY_AI_TASK:
             continue
 
+        entity = AIHubTaskEntity(config_entry, subentry)
         async_add_entities(
-            [AIHubTaskEntity(config_entry, subentry)],
+            [entity],
             config_subentry_id=subentry.subentry_id,
         )
 
@@ -89,6 +91,12 @@ class AIHubTaskEntity(
         conversation_model = _get_conversation_model(entry)
         default_model = conversation_model
         super().__init__(entry, subentry, default_model)
+
+        # Force a fixed, stable entity name so the entity_id is always
+        # ai_task.ai_task regardless of the subentry title or provider/model.
+        # Other entity types keep their Provider/Model naming; only AI Task is
+        # pinned because automations reference it by entity_id.
+        self._attr_name = "AI Task"
 
         # Start with basic features
         self._attr_supported_features = (
