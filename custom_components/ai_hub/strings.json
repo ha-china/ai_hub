@@ -275,24 +275,6 @@
         }
       }
     },
-    "tts_say": {
-      "name": "Edge TTS Speech Synthesis",
-      "description": "Convert text to speech using Edge TTS",
-      "fields": {
-        "text": {
-          "name": "Text",
-          "description": "Text content to convert to speech"
-        },
-        "voice": {
-          "name": "Voice",
-          "description": "Select Edge TTS voice, like zh-CN-XiaoxiaoNeural"
-        },
-        "media_player_entity": {
-          "name": "Media Player",
-          "description": "Media player entity to play speech"
-        }
-      }
-    },
     "stt_transcribe": {
       "name": "Silicon Flow ASR Transcription",
       "description": "Convert speech to text using Silicon Flow ASR",

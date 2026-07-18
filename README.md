@@ -248,19 +248,6 @@ data:
 2. **输入文本**: 输入要合成的文本内容 / Enter your text
 3. **播放语音**: 系统会自动播放合成的语音 / It will be played automatically
 
-#### 服务调用 / As Service
-
-```yaml
-service: ai_hub.tts_say
-data:
-  text: "欢迎使用AI Hub语音合成服务 / Welcome to AI Hub voice synthesis"
-  voice: "zh-CN-XiaoxiaoNeural"
-  pitch: "+0Hz"    # 音调调节，如 "+5Hz" 或 "-5Hz" / Pitch adjustment
-  rate: "+0%"      # 语速调节，如 "+10%" 或 "-10%" / Speed adjustment
-  volume: "+0%"    # 音量调节，如 "+10%" 或 "-10%" / Volume adjustment
-  media_player_entity: media_player.living_room_speaker
-```
-
 ### D. STT 语音识别 / Speech to Text
 
 #### 实体方式 / As Entity

@@ -5,8 +5,6 @@
 可用模式:
 - IMAGE_ANALYZER_SCHEMA: 图像分析服务
 - IMAGE_GENERATOR_SCHEMA: 图像生成服务
-- TTS_SCHEMA: 文本转语音服务
-- TTS_STREAM_SCHEMA: 流式文本转语音服务
 - STT_SCHEMA: 语音转文本服务
 - TRANSLATION_SCHEMA: 组件翻译服务
 - BLUEPRINTS_TRANSLATION_SCHEMA: 蓝图翻译服务
@@ -17,7 +15,6 @@ from homeassistant.helpers import config_validation as cv
 
 from ..consts import (
     CONF_STT_FILE,
-    EDGE_TTS_VOICES,
     IMAGE_SIZES,
     RECOMMENDED_IMAGE_ANALYSIS_MODEL,
     RECOMMENDED_IMAGE_MODEL,
@@ -25,13 +22,9 @@ from ..consts import (
     RECOMMENDED_STT_MODEL,
     RECOMMENDED_TEMPERATURE,
     SILICONFLOW_STT_MODELS,
-    TTS_DEFAULT_VOICE,
 )
 
 CONFIG_ENTRY_FIELD = {vol.Optional("config_entry_id"): cv.string}
-TTS_VOICE_FIELD = {
-    vol.Optional("voice", default=TTS_DEFAULT_VOICE): vol.In(list(EDGE_TTS_VOICES.keys()))
-}
 
 # Schema for image analysis service
 IMAGE_ANALYZER_SCHEMA = {
@@ -51,22 +44,6 @@ IMAGE_GENERATOR_SCHEMA = {
     vol.Required("prompt"): cv.string,
     vol.Optional("size", default="1024x1024"): vol.In(IMAGE_SIZES),
     vol.Optional("model", default=RECOMMENDED_IMAGE_MODEL): cv.string,
-}
-
-# Schema for Edge TTS service
-TTS_SCHEMA = {
-    **CONFIG_ENTRY_FIELD,
-    vol.Required("text"): cv.string,
-    **TTS_VOICE_FIELD,
-    vol.Optional("media_player_entity"): cv.entity_id,
-}
-
-# Schema for streaming Edge TTS service
-TTS_STREAM_SCHEMA = {
-    **CONFIG_ENTRY_FIELD,
-    vol.Required("text"): cv.string,
-    **TTS_VOICE_FIELD,
-    vol.Optional("chunk_size", default=4096): vol.Coerce(int),
 }
 
 # Schema for Silicon Flow STT service

@@ -24,7 +24,6 @@ from custom_components.ai_hub.const import (
     SERVICE_STT_TRANSCRIBE,
     SERVICE_TRANSLATE_BLUEPRINTS,
     SERVICE_TRANSLATE_COMPONENTS,
-    SERVICE_TTS_SAY,
 )
 from custom_components.ai_hub.services import (
     _get_conversation_config,
@@ -158,16 +157,12 @@ class TestAsyncSetupServices:
         """Test setting up all services."""
         with patch("custom_components.ai_hub.services.handle_analyze_image") as mock_analyze, \
              patch("custom_components.ai_hub.services.handle_generate_image") as mock_generate, \
-             patch("custom_components.ai_hub.services.handle_tts_speech") as mock_tts, \
-             patch("custom_components.ai_hub.services.handle_tts_stream") as mock_stream, \
              patch("custom_components.ai_hub.services.handle_stt_transcribe") as mock_stt, \
              patch("custom_components.ai_hub.services.async_translate_all_components") as mock_translate, \
              patch("custom_components.ai_hub.services.async_translate_all_blueprints") as mock_blueprints:
 
             mock_analyze.return_value = AsyncMock(return_value={"success": True})
             mock_generate.return_value = AsyncMock(return_value={"success": True})
-            mock_tts.return_value = AsyncMock(return_value={"success": True})
-            mock_stream.return_value = AsyncMock(return_value={"success": True})
             mock_stt.return_value = AsyncMock(return_value={"success": True})
             mock_translate.return_value = AsyncMock(return_value={"success": True, "result": {}})
             mock_blueprints.return_value = AsyncMock(return_value={"success": True, "result": {}})
@@ -182,66 +177,9 @@ class TestAsyncSetupServices:
 
             assert SERVICE_ANALYZE_IMAGE in registered_services
             assert SERVICE_GENERATE_IMAGE in registered_services
-            assert SERVICE_TTS_SAY in registered_services
             assert SERVICE_STT_TRANSCRIBE in registered_services
             assert SERVICE_TRANSLATE_COMPONENTS in registered_services
             assert SERVICE_TRANSLATE_BLUEPRINTS in registered_services
-
-    @pytest.mark.asyncio
-    async def test_tts_say_service_with_stream(self, mock_hass, mock_config_entry):
-        """Test TTS service with streaming enabled."""
-        with patch("custom_components.ai_hub.services.handle_tts_stream") as mock_stream, \
-             patch("custom_components.ai_hub.services.handle_tts_speech") as mock_tts:
-
-            mock_stream.return_value = AsyncMock(return_value={"success": True})
-            mock_tts.return_value = AsyncMock(return_value={"success": True})
-
-            await async_setup_services(mock_hass, mock_config_entry)
-
-            # Get the TTS service handler
-            tts_handlers = [
-                call for call in mock_hass.services.async_register.call_args_list
-                if len(call) > 1 and call[1] == SERVICE_TTS_SAY
-            ]
-
-            if tts_handlers:
-                handler = tts_handlers[0][2]  # Get the handler function
-                mock_call = MagicMock(spec=ServiceCall)
-                mock_call.data = {"stream": True}
-
-                await handler(mock_call)
-
-                # Should call stream handler, not regular TTS
-                mock_stream.assert_called_once()
-                mock_tts.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_tts_say_service_without_stream(self, mock_hass, mock_config_entry):
-        """Test TTS service without streaming."""
-        with patch("custom_components.ai_hub.services.handle_tts_stream") as mock_stream, \
-             patch("custom_components.ai_hub.services.handle_tts_speech") as mock_tts:
-
-            mock_stream.return_value = AsyncMock(return_value={"success": True})
-            mock_tts.return_value = AsyncMock(return_value={"success": True})
-
-            await async_setup_services(mock_hass, mock_config_entry)
-
-            # Get the TTS service handler
-            tts_handlers = [
-                call for call in mock_hass.services.async_register.call_args_list
-                if len(call) > 1 and call[1] == SERVICE_TTS_SAY
-            ]
-
-            if tts_handlers:
-                handler = tts_handlers[0][2]  # Get the handler function
-                mock_call = MagicMock(spec=ServiceCall)
-                mock_call.data = {"stream": False}
-
-                await handler(mock_call)
-
-                # Should call regular TTS handler, not stream
-                mock_tts.assert_called_once()
-                mock_stream.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_translate_components_service_list_only(self, mock_hass, mock_config_entry):
@@ -288,7 +226,6 @@ class TestAsyncUnloadServices:
 
         assert SERVICE_ANALYZE_IMAGE in removed_services
         assert SERVICE_GENERATE_IMAGE in removed_services
-        assert SERVICE_TTS_SAY in removed_services
         assert SERVICE_STT_TRANSCRIBE in removed_services
         assert SERVICE_TRANSLATE_COMPONENTS in removed_services
         assert SERVICE_TRANSLATE_BLUEPRINTS in removed_services

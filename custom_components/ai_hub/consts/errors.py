@@ -17,7 +17,6 @@ ERROR_CANNOT_CONNECT: Final = ERRORS["cannot_connect"]
 SERVICES: Final = {
     "generate_image": "generate_image",
     "analyze_image": "analyze_image",
-    "tts_say": "tts_say",
     "stt_transcribe": "stt_transcribe",
     "translate_components": "translate_components",
     "translate_blueprints": "translate_blueprints",
@@ -25,9 +24,6 @@ SERVICES: Final = {
 
 SERVICE_GENERATE_IMAGE: Final = SERVICES["generate_image"]
 SERVICE_ANALYZE_IMAGE: Final = SERVICES["analyze_image"]
-SERVICE_TTS_SAY: Final = SERVICES["tts_say"]
-SERVICE_TTS_SPEECH: Final = "tts_speech"
-SERVICE_TTS_STREAM: Final = "tts_stream"
 SERVICE_STT_TRANSCRIBE: Final = SERVICES["stt_transcribe"]
 SERVICE_TRANSLATE_COMPONENTS: Final = SERVICES["translate_components"]
 SERVICE_TRANSLATE_BLUEPRINTS: Final = SERVICES["translate_blueprints"]

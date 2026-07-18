@@ -5,7 +5,6 @@
 模块结构:
 - schemas.py: 服务调用的数据验证模式
 - image.py: 图像分析和生成服务
-- tts.py: 文本转语音服务
 - stt.py: 语音转文本服务
 - translation.py: 组件翻译服务
 - blueprints.py: 蓝图翻译服务
@@ -14,7 +13,6 @@
     from .services_lib import (
         handle_analyze_image,
         handle_generate_image,
-        handle_tts_speech,
         handle_stt_transcribe,
     )
 
@@ -47,7 +45,6 @@ from .schemas import (
     IMAGE_GENERATOR_SCHEMA,
     STT_SCHEMA,
     TRANSLATION_SCHEMA,
-    TTS_SCHEMA,
 )
 
 # STT services
@@ -61,17 +58,10 @@ from .translation import (
     async_translate_text,
 )
 
-# TTS services
-from .tts import (
-    handle_tts_speech,
-    handle_tts_stream,
-)
-
 __all__ = [
     # Schemas
     "IMAGE_ANALYZER_SCHEMA",
     "IMAGE_GENERATOR_SCHEMA",
-    "TTS_SCHEMA",
     "STT_SCHEMA",
     "TRANSLATION_SCHEMA",
     "BLUEPRINTS_TRANSLATION_SCHEMA",
@@ -82,9 +72,6 @@ __all__ = [
     "load_image_from_camera",
     "process_image",
     "handle_stream_response",
-    # TTS
-    "handle_tts_speech",
-    "handle_tts_stream",
     # STT
     "handle_stt_transcribe",
     # Translation

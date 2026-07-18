@@ -290,28 +290,6 @@
         }
       }
     },
-    "tts_say": {
-      "name": "Edge TTS语音合成",
-      "description": "使用Edge TTS将文本转换为语音",
-      "fields": {
-        "config_entry_id": {
-          "name": "配置项",
-          "description": "可选；用于在多个 AI Hub 配置项并存时明确指定调用来源"
-        },
-        "text": {
-          "name": "文本",
-          "description": "要转换为语音的文本内容"
-        },
-        "voice": {
-          "name": "语音",
-          "description": "选择Edge TTS语音，如zh-CN-XiaoxiaoNeural"
-        },
-        "media_player_entity": {
-          "name": "媒体播放器",
-          "description": "用于播放语音的媒体播放器实体"
-        }
-      }
-    },
     "stt_transcribe": {
       "name": "硅基流动ASR转录",
       "description": "使用硅基流动ASR将语音转换为文本",

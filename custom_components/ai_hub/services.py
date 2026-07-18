@@ -25,7 +25,6 @@ from .consts import (
     SERVICE_TRANSLATE_BLUEPRINTS,
     SERVICE_TRANSLATE_COMPONENTS,
     SILICONFLOW_ASR_URL,
-    SERVICE_TTS_SAY,
     SUBENTRY_AI_TASK,
     SUBENTRY_CONVERSATION,
     SUBENTRY_STT,
@@ -38,15 +37,12 @@ from .services_lib import (
     IMAGE_GENERATOR_SCHEMA,
     STT_SCHEMA,
     TRANSLATION_SCHEMA,
-    TTS_SCHEMA,
     async_translate_all_blueprints,
     async_translate_all_components,
     # Handlers
     handle_analyze_image,
     handle_generate_image,
     handle_stt_transcribe,
-    handle_tts_speech,
-    handle_tts_stream,
 )
 from .helpers import translation_placeholders
 
@@ -267,14 +263,6 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
         return
 
     # ========== 图像分析服务 ==========
-    # ========== TTS 语音合成服务（统一） ==========
-    async def _handle_tts_say(call: ServiceCall) -> dict:
-        """Handle TTS service with optional streaming support."""
-        stream = call.data.get("stream", False)
-        if stream:
-            return await handle_tts_stream(hass, call)
-        return await handle_tts_speech(hass, call)
-
     # ========== STT 语音转文字服务 ==========
     # ========== 组件翻译服务 ==========
     async def _handle_translate_components(call: ServiceCall) -> dict:
@@ -313,7 +301,6 @@ async def async_setup_services(hass: HomeAssistant, config_entry) -> None:
     # ========== 注册所有服务 ==========
     _register_service(hass, SERVICE_ANALYZE_IMAGE, _handle_analyze_image, IMAGE_ANALYZER_SCHEMA)
     _register_service(hass, SERVICE_GENERATE_IMAGE, _handle_generate_image, IMAGE_GENERATOR_SCHEMA)
-    _register_service(hass, SERVICE_TTS_SAY, _handle_tts_say, TTS_SCHEMA)
     _register_service(hass, SERVICE_STT_TRANSCRIBE, _handle_stt_transcribe, STT_SCHEMA)
     _register_service(hass, SERVICE_TRANSLATE_COMPONENTS, _handle_translate_components, TRANSLATION_SCHEMA)
     _register_service(
@@ -348,7 +335,6 @@ async def async_unload_services(hass: HomeAssistant, entry_id: str | None = None
 
     hass.services.async_remove(DOMAIN, SERVICE_ANALYZE_IMAGE)
     hass.services.async_remove(DOMAIN, SERVICE_GENERATE_IMAGE)
-    hass.services.async_remove(DOMAIN, SERVICE_TTS_SAY)
     hass.services.async_remove(DOMAIN, SERVICE_STT_TRANSCRIBE)
     hass.services.async_remove(DOMAIN, SERVICE_TRANSLATE_COMPONENTS)
     hass.services.async_remove(DOMAIN, SERVICE_TRANSLATE_BLUEPRINTS)
