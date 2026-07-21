@@ -44,7 +44,6 @@ from .helpers import translation_placeholders
 from .llm_attachment_processor import AttachmentProcessor
 from .llm_message_builder import ChatMessageBuilder
 from .llm_model_utils import chat_log_has_media_attachments, select_media_model
-from .markdown_filter import filter_markdown_streaming
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -544,23 +543,18 @@ class AIHubBaseLLMEntity(Entity, _AIHubEntityMixin):
                 else:
                     start_pos = text_buffer.find("<think>")
                     if start_pos == -1:
-                        filtered = filter_markdown_streaming(text_buffer)
-                        if filtered:
-                            yield {"content": filtered}
+                        if text_buffer:
+                            yield {"content": text_buffer}
                         text_buffer = ""
                         break
                     before = text_buffer[:start_pos]
                     if before:
-                        filtered = filter_markdown_streaming(before)
-                        if filtered:
-                            yield {"content": filtered}
+                        yield {"content": before}
                     text_buffer = text_buffer[start_pos + len("<think>"):]
                     in_think_tag = True
 
         if text_buffer and not in_think_tag:
-            filtered = filter_markdown_streaming(text_buffer)
-            if filtered:
-                yield {"content": filtered}
+            yield {"content": text_buffer}
 
     def _convert_provider_tool_calls(
         self,

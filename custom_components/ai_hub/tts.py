@@ -142,7 +142,12 @@ class AIHubTTSEntity(TextToSpeechEntity, AIHubEntityBase):
 
     def __init__(self, config_entry: ConfigEntry, subentry: ConfigSubentry) -> None:
         """Initialize the TTS entity."""
-        super().__init__(config_entry, subentry, TTS_DEFAULT_VOICE)
+        super().__init__(
+            config_entry,
+            subentry,
+            TTS_DEFAULT_VOICE,
+            warn_on_missing_api_key=False,
+        )
         self._attr_available = True
 
         self._attr_device_info = dr.DeviceInfo(
