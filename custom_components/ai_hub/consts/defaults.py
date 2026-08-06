@@ -104,14 +104,11 @@ def _load_ai_providers() -> dict[str, Any]:
         return {"providers": {"default": "OpenAI"}, "url_to_provider": {}}
 
 
-_AI_PROVIDERS: dict[str, Any] | None = None
+_AI_PROVIDERS: dict[str, Any] = _load_ai_providers()
 
 
 def _get_ai_providers() -> dict[str, Any]:
     """Get cached AI providers data."""
-    global _AI_PROVIDERS
-    if _AI_PROVIDERS is None:
-        _AI_PROVIDERS = _load_ai_providers()
     return _AI_PROVIDERS
 
 
