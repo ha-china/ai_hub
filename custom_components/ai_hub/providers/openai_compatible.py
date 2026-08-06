@@ -651,8 +651,10 @@ class OpenAICompatibleProvider(LLMProvider):
         if tools:
             request["tools"] = tools
 
-        if self.config.enable_thinking:
-            request["enable_thinking"] = True
+        # Always send enable_thinking explicitly so models like Qwen3
+        # (which default to thinking ON) are properly disabled when the
+        # user has not opted in.
+        request["enable_thinking"] = bool(self.config.enable_thinking)
 
         request.update(self.config.extra)
         request.update(kwargs)

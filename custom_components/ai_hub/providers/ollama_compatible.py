@@ -202,8 +202,9 @@ class OllamaCompatibleProvider(LLMProvider):
         if tools:
             request["tools"] = tools
 
-        if self.config.enable_thinking:
-            request["think"] = True
+        # Always send think explicitly so models like Qwen3 (which default
+        # to thinking ON) are properly disabled when not opted in.
+        request["think"] = bool(self.config.enable_thinking)
 
         extra = dict(self.config.extra)
         extra_options = extra.pop("options", None)
