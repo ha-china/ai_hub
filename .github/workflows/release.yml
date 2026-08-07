@@ -40,50 +40,14 @@ jobs:
             echo "Tag $version does not exist, will create release"
           fi
 
-      - name: Get previous tag
-        id: prev_tag
-        run: |
-          git fetch --tags
-          prev_tag=$(git tag --sort=-creatordate | grep -v "^${{ steps.extract_version.outputs.version }}$" | head -n 1)
-          echo "prev_tag=$prev_tag" >> $GITHUB_OUTPUT
-
-      - name: Create changelog since previous release
+      - name: Generate bilingual changelog
         id: changelog
-        env:
-          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
-        run: |
-          prev_tag="${{ steps.prev_tag.outputs.prev_tag }}"
-          if [ -n "$prev_tag" ]; then
-            log=$(git log --pretty=format:"- %s" "$prev_tag"..HEAD)
-          else
-            log=$(git log --pretty=format:"- %s")
-          fi
-          
-          # 如果有 API Key，使用 AI 生成双语 changelog
-          if [ -n "$ZHIPU_API_KEY" ]; then
-            prompt="请将以下 git commit 记录翻译成中英双语格式。如果原文是中文就翻译成英文，如果是英文就翻译成中文。务必保留每条 commit 开头的类型前缀，不允许省略，例如 fix:、docs:、chore:、refactor:、feat: 等；前缀可以翻译，但必须明确保留在中文和英文两行里。输出格式：每条记录先显示中文，然后显示英文（用斜体），例如：- 修复: 登录问题 / *Fix: login issue*。只输出翻译结果，不要其他内容。\n\n${log}"
-            
-            response=$(curl -s https://open.bigmodel.cn/api/paas/v4/chat/completions \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $ZHIPU_API_KEY" \
-              -d "$(jq -n --arg content "$prompt" '{
-                "model": "glm-4.7-flash",
-                "messages": [{"role": "user", "content": $content}],
-                "temperature": 0.1
-              }')")
-            
-            translated=$(echo "$response" | jq -r '.choices[0].message.content // empty')
-            
-            if [ -n "$translated" ]; then
-              log="$translated"
-            fi
-          fi
-          
-          {
-            echo "log<<EOF"
-            echo "$log"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+        if: github.event_name == 'push' && steps.check_tag.outputs.exists == 'false'
+        uses: Desmond-Dong/actions/bilingual-changelog@main
+        with:
+          llm-api-key: ${{ secrets.LLM_API_KEY }}
+          llm-api-url: ${{ secrets.LLM_API_URL }}
+          llm-model: ${{ secrets.LLM_MODEL }}
 
       - name: Create tag and release
         if: github.event_name == 'push' && steps.check_tag.outputs.exists == 'false'
@@ -100,10 +64,7 @@ jobs:
         with:
           tag_name: ${{ steps.extract_version.outputs.version }}
           name: Release ${{ steps.extract_version.outputs.version }}
-          body: |
-            ## Changes since ${{ steps.prev_tag.outputs.prev_tag }}
-
-            ${{ steps.changelog.outputs.log }}
+          body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
 
