@@ -16,10 +16,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import aiohttp
 
@@ -130,6 +132,26 @@ async def _async_translate_simple_text(
         return text
 
 
+def _read_json_file(path: Path) -> Any:
+    """Read a JSON file synchronously."""
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_json_file(path: Path, data: Any) -> None:
+    """Write a JSON file synchronously."""
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _iter_component_dirs(base_path: Path) -> list[Path]:
+    """List component directories synchronously."""
+    return [
+        d for d in base_path.iterdir()
+        if d.is_dir() and d.name not in ["ai_hub", "translation_localizer"]
+    ]
+
+
 async def async_translate_component(
     component_dir: Path,
     component_name: str,
@@ -143,20 +165,20 @@ async def async_translate_component(
     en_file = translations_dir / "en.json"
     zh_file = translations_dir / "zh-Hans.json"
 
-    if not translations_dir.exists() or not en_file.exists():
+    if not await asyncio.to_thread(translations_dir.exists) or not await asyncio.to_thread(
+        en_file.exists
+    ):
         return "skipped"
 
-    if zh_file.exists() and not force_translation:
+    if await asyncio.to_thread(zh_file.exists) and not force_translation:
         return "skipped"
 
     try:
-        with open(en_file, 'r', encoding='utf-8') as f:
-            en_data = json.load(f)
+        en_data = await asyncio.to_thread(_read_json_file, en_file)
 
         zh_data = await async_translate_json_values(en_data, api_key, api_url, model)
 
-        with open(zh_file, 'w', encoding='utf-8') as f:
-            json.dump(zh_data, f, ensure_ascii=False, indent=2)
+        await asyncio.to_thread(_write_json_file, zh_file, zh_data)
 
         _LOGGER.info(f"Successfully translated {component_name}")
         return "translated"
@@ -183,7 +205,7 @@ async def async_translate_all_components(
     ]
 
     for path in paths_to_try:
-        if path.exists() and path.is_dir():
+        if await asyncio.to_thread(path.exists) and await asyncio.to_thread(path.is_dir):
             base_path = path
             break
 
@@ -194,13 +216,10 @@ async def async_translate_all_components(
         all_components = []
         available_translations = []
 
-        for component_dir in base_path.iterdir():
-            if not component_dir.is_dir() or component_dir.name in ["ai_hub", "translation_localizer"]:
-                continue
-
+        for component_dir in await asyncio.to_thread(_iter_component_dirs, base_path):
             all_components.append(component_dir.name)
             zh_file = component_dir / "translations" / "zh-Hans.json"
-            if zh_file.exists():
+            if await asyncio.to_thread(zh_file.exists):
                 available_translations.append(component_dir.name)
 
         return build_list_result(
@@ -215,10 +234,7 @@ async def async_translate_all_components(
     translated_components = []
     skipped_components = []
 
-    component_dirs = [
-        d for d in base_path.iterdir()
-        if d.is_dir() and d.name not in ["ai_hub", "translation_localizer"]
-    ]
+    component_dirs = await asyncio.to_thread(_iter_component_dirs, base_path)
     component_dirs, error = select_named_items(
         component_dirs,
         target_component,
