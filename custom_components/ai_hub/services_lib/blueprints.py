@@ -185,7 +185,9 @@ async def async_translate_all_blueprints(
     """异步翻译或列出blueprints目录中的文件."""
     base_path = Path(blueprints_path)
 
-    if not base_path.exists() or not base_path.is_dir():
+    if not await asyncio.to_thread(base_path.exists) or not await asyncio.to_thread(
+        base_path.is_dir
+    ):
         return {"translated": 0, "skipped": 0, "error": f"Blueprints directory not found: {blueprints_path}"}
 
     _LOGGER.info(f"Scanning blueprints in: {base_path}")
@@ -194,7 +196,7 @@ async def async_translate_all_blueprints(
         all_blueprints = []
         available_translations = []
 
-        for yaml_file in base_path.rglob("*.yaml"):
+        for yaml_file in await asyncio.to_thread(list, base_path.rglob("*.yaml")):
             blueprint_info = {"path": str(yaml_file.relative_to(base_path)), "has_translation": False, "name": ""}
 
             try:
@@ -227,7 +229,7 @@ async def async_translate_all_blueprints(
     translated_blueprints = []
     skipped_blueprints = []
 
-    yaml_files = list(base_path.rglob("*.yaml"))
+    yaml_files = await asyncio.to_thread(list, base_path.rglob("*.yaml"))
     yaml_files, error = select_named_items(
         yaml_files,
         target_blueprint,

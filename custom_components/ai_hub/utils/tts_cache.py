@@ -370,7 +370,7 @@ class PersistentTTSCache(TTSCache):
         key = self._make_key(text, voice)
         file_path = self._get_file_path(key)
 
-        if not file_path.exists():
+        if not await asyncio.to_thread(file_path.exists):
             return None
 
         try:
@@ -399,9 +399,11 @@ class PersistentTTSCache(TTSCache):
         current_time = time.time()
 
         try:
-            for file_path in self._cache_dir.glob("*.mp3"):
+            for file_path in await asyncio.to_thread(_list_cache_files, self._cache_dir):
                 try:
-                    file_age = current_time - file_path.stat().st_mtime
+                    file_age = current_time - await asyncio.to_thread(
+                        _get_file_mtime, file_path
+                    )
                     if file_age > max_age_seconds:
                         await asyncio.to_thread(file_path.unlink)
                         removed += 1
@@ -415,6 +417,16 @@ class PersistentTTSCache(TTSCache):
             _LOGGER.warning("Failed to cleanup disk cache: %s", e)
 
         return removed
+
+
+def _list_cache_files(cache_dir: Path) -> list[Path]:
+    """List cache files synchronously."""
+    return list(cache_dir.glob("*.mp3"))
+
+
+def _get_file_mtime(file_path: Path) -> float:
+    """Get file modification time synchronously."""
+    return file_path.stat().st_mtime
 
 
 # Global cache instance

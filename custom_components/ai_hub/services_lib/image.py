@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
@@ -50,22 +51,21 @@ async def load_image_from_file(hass: HomeAssistant, image_file: str) -> bytes:
         if not os.path.isabs(image_file):
             image_file = os.path.join(hass.config.config_dir, image_file)
 
-        if not os.path.exists(image_file):
+        if not await asyncio.to_thread(os.path.exists, image_file):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="image_file_not_found",
                 translation_placeholders=translation_placeholders(path=image_file),
             )
 
-        if os.path.isdir(image_file):
+        if await asyncio.to_thread(os.path.isdir, image_file):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="path_is_directory",
                 translation_placeholders=translation_placeholders(path=image_file),
             )
 
-        with open(image_file, "rb") as f:
-            return f.read()
+        return await asyncio.to_thread(_read_file_bytes, image_file)
 
     except IOError as err:
         raise ServiceValidationError(
@@ -73,6 +73,12 @@ async def load_image_from_file(hass: HomeAssistant, image_file: str) -> bytes:
             translation_key="image_file_read_failed",
             translation_placeholders=translation_placeholders(error=err),
         ) from err
+
+
+def _read_file_bytes(path: str) -> bytes:
+    """Read a binary file synchronously."""
+    with open(path, "rb") as f:
+        return f.read()
 
 
 async def load_image_from_camera(hass: HomeAssistant, entity_id: str) -> bytes:

@@ -71,21 +71,21 @@ async def handle_stt_transcribe(
         if not os.path.isabs(audio_file):
             audio_file = os.path.join(hass.config.config_dir, audio_file)
 
-        if not os.path.exists(audio_file):
+        if not await asyncio.to_thread(os.path.exists, audio_file):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="stt_audio_file_not_found",
                 translation_placeholders=translation_placeholders(path=audio_file),
             )
 
-        if os.path.isdir(audio_file):
+        if await asyncio.to_thread(os.path.isdir, audio_file):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="path_is_directory",
                 translation_placeholders=translation_placeholders(path=audio_file),
             )
 
-        file_size = os.path.getsize(audio_file)
+        file_size = await asyncio.to_thread(os.path.getsize, audio_file)
         if file_size > STT_MAX_FILE_SIZE_MB * 1024 * 1024:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
@@ -104,8 +104,7 @@ async def handle_stt_transcribe(
                 ),
             )
 
-        with open(audio_file, "rb") as f:
-            audio_data = f.read()
+        audio_data = await asyncio.to_thread(_read_file_bytes, audio_file)
 
         headers = {"Authorization": f"Bearer {siliconflow_api_key}"}
 
@@ -172,3 +171,9 @@ async def handle_stt_transcribe(
             translation_key="stt_transcription_failed",
             translation_placeholders=translation_placeholders(error=exc),
         ) from exc
+
+
+def _read_file_bytes(path: str) -> bytes:
+    """Read a binary file synchronously."""
+    with open(path, "rb") as f:
+        return f.read()
