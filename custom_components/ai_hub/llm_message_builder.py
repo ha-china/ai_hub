@@ -10,7 +10,11 @@ from typing import Any
 from homeassistant.components import conversation
 from homeassistant.helpers import llm
 from homeassistant.util import ulid
-from voluptuous_openapi import convert
+
+try:
+    from probatio import to_openapi
+except ImportError:  # Home Assistant < 2026.9 bundles voluptuous_openapi instead
+    from voluptuous_openapi import convert as to_openapi  # type: ignore[assignment]
 
 from .llm_attachment_processor import AttachmentProcessor
 from .utils.serialization import ensure_string
@@ -208,13 +212,13 @@ class ChatMessageBuilder:
     @staticmethod
     def convert_schema(schema: dict[str, Any], custom_serializer: Callable[[Any], Any] | None) -> dict[str, Any]:
         try:
-            return convert(
+            return to_openapi(
                 schema,
                 custom_serializer=custom_serializer if custom_serializer else llm.selector_serializer,
             )
         except Exception as err:
             _LOGGER.warning("Failed to convert schema with custom_serializer: %s", err)
             try:
-                return convert(schema, custom_serializer=llm.selector_serializer)
+                return to_openapi(schema, custom_serializer=llm.selector_serializer)
             except Exception:
                 return schema
