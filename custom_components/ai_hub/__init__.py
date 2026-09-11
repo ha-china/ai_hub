@@ -197,7 +197,7 @@ async def _async_remove_legacy_diagnostic_entities(
 
     device_registry = dr.async_get(hass)
     legacy_device = device_registry.async_get_device_by_identifier(
-        (DOMAIN, f"{entry.entry_id}_diagnostic")
+        (DOMAIN, f"{entry.entry_id}_diagnostic"), entry.entry_id
     )
     if legacy_device is not None:
         device_registry.async_remove_device(legacy_device.id)

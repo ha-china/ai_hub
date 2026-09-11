@@ -95,7 +95,7 @@ class TestLegacyDiagnosticCleanup:
 
         entity_registry.async_remove.assert_called_once_with("sensor.ai_hub_health_status")
         device_registry.async_get_device_by_identifier.assert_called_once_with(
-            (DOMAIN, "entry-1_diagnostic")
+            (DOMAIN, "entry-1_diagnostic"), "entry-1"
         )
         device_registry.async_remove_device.assert_called_once_with("device-1")
 
