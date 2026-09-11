@@ -86,7 +86,7 @@ class TestLegacyDiagnosticCleanup:
             "custom_components.ai_hub.dr",
             SimpleNamespace(async_get=lambda hass: device_registry),
         )
-        device_registry.async_get_device.return_value = legacy_device
+        device_registry.async_get_device_by_identifier.return_value = legacy_device
 
         hass = SimpleNamespace()
         entry = SimpleNamespace(entry_id="entry-1")
@@ -94,8 +94,8 @@ class TestLegacyDiagnosticCleanup:
         await _async_remove_legacy_diagnostic_entities(hass, entry)
 
         entity_registry.async_remove.assert_called_once_with("sensor.ai_hub_health_status")
-        device_registry.async_get_device.assert_called_once_with(
-            identifiers={(DOMAIN, "entry-1_diagnostic")}
+        device_registry.async_get_device_by_identifier.assert_called_once_with(
+            (DOMAIN, "entry-1_diagnostic")
         )
         device_registry.async_remove_device.assert_called_once_with("device-1")
 
@@ -116,7 +116,7 @@ class TestLegacyDiagnosticCleanup:
             "custom_components.ai_hub.dr",
             SimpleNamespace(async_get=lambda hass: device_registry),
         )
-        device_registry.async_get_device.return_value = None
+        device_registry.async_get_device_by_identifier.return_value = None
 
         hass = SimpleNamespace()
         entry = SimpleNamespace(entry_id="entry-1")
