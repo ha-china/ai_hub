@@ -50,8 +50,14 @@ IMAGE_SIZES: Final = [
 ]
 
 SILICONFLOW_STT_MODELS: Final = [
+    # All models below verified stable with both Chinese and English audio
+    # against api.siliconflow.cn. SenseVoiceSmall was removed: the upstream
+    # endpoint currently times out on most requests and leaks emoji into
+    # transcriptions.
+    "Qwen/Qwen3-ASR-1.7B",
     "TeleAI/TeleSpeechASR",
-    "FunAudioLLM/SenseVoiceSmall",
+    "XingChenAGI/XingChenASR-V3.2",
+    "XingChenAGI/XingChenASR-V3.2-Ultra",
 ]
 
 SILICONFLOW_STT_AUDIO_FORMATS: Final = ["mp3", "wav", "flac", "m4a", "ogg", "webm"]

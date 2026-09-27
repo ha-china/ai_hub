@@ -463,4 +463,51 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         _LOGGER.debug("Migration to version %s.%s successful", entry.version, entry.minor_version)
 
+    if entry.version == 2 and entry.minor_version == 3:
+        # Migrate from version 2.3 to version 2.4
+        # The upstream SenseVoiceSmall ASR endpoint became unstable (frequent
+        # timeouts) and was removed from the selectable model list. Move any
+        # STT subentry still on a no-longer-supported model to the new default
+        # (Qwen/Qwen3-ASR-1.7B). Subentries on models that remain selectable
+        # (e.g. TeleAI/TeleSpeechASR) are left untouched. Auto-generated
+        # subentry titles are refreshed; user-customized titles are kept.
+        from .consts import (
+            CONF_STT_MODEL,
+            SILICONFLOW_STT_MODELS,
+            STT_DEFAULT_MODEL,
+            SUBENTRY_STT,
+            get_default_service_name,
+        )
+
+        for subentry in entry.subentries.values():
+            if subentry.subentry_type != SUBENTRY_STT:
+                continue
+            if subentry.data.get(CONF_STT_MODEL) in SILICONFLOW_STT_MODELS:
+                continue
+            old_model = subentry.data.get(CONF_STT_MODEL)
+            new_data = {**subentry.data, CONF_STT_MODEL: STT_DEFAULT_MODEL}
+            if subentry.title == get_default_service_name("stt", subentry.data):
+                title = get_default_service_name("stt", new_data)
+            else:
+                title = subentry.title
+            hass.config_entries.async_update_subentry(
+                entry,
+                subentry.subentry_id,
+                data=new_data,
+                title=title,
+            )
+            _LOGGER.info(
+                "Migrated STT subentry %s from model %s to %s",
+                subentry.subentry_id,
+                old_model,
+                STT_DEFAULT_MODEL,
+            )
+
+        hass.config_entries.async_update_entry(
+            entry,
+            minor_version=4,
+        )
+
+        _LOGGER.debug("Migration to version %s.%s successful", entry.version, entry.minor_version)
+
     return True

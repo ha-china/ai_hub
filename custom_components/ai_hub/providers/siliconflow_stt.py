@@ -28,13 +28,16 @@ from .stt_base import AudioMetadata, STTConfig, STTProvider, STTResult
 
 _LOGGER = logging.getLogger(__name__)
 
-# Supported models
+# Supported models (verified stable with Chinese and English audio)
 SILICONFLOW_STT_MODELS = [
-    "FunAudioLLM/SenseVoiceSmall",
+    "Qwen/Qwen3-ASR-1.7B",
+    "TeleAI/TeleSpeechASR",
+    "XingChenAGI/XingChenASR-V3.2",
+    "XingChenAGI/XingChenASR-V3.2-Ultra",
 ]
 
 # Default model
-DEFAULT_MODEL = "FunAudioLLM/SenseVoiceSmall"
+DEFAULT_MODEL = "Qwen/Qwen3-ASR-1.7B"
 
 
 def _create_wav_header(audio_data: bytes, metadata: AudioMetadata) -> bytes:

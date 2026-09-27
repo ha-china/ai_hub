@@ -49,7 +49,7 @@ RECOMMENDED: Final[dict[str, Any]] = {
     "image_model": "Kwai-Kolors/Kolors",
     "image_analysis_model": "Qwen/Qwen3.5-4B",
     "tts_voice": "zh-CN-XiaoxiaoNeural",
-    "stt_model": "FunAudioLLM/SenseVoiceSmall",
+    "stt_model": "Qwen/Qwen3-ASR-1.7B",
 }
 
 CONFIG_FLOW_TEST_MESSAGE: Final = "Hi"
@@ -197,7 +197,7 @@ DEFAULT_TRANSLATION_NAME: Final = "AI Hub"
 
 TTS_DEFAULT_VOICE: Final = "zh-CN-XiaoxiaoNeural"
 TTS_DEFAULT_LANG: Final = "zh-CN"
-STT_DEFAULT_MODEL: Final = "FunAudioLLM/SenseVoiceSmall"
+STT_DEFAULT_MODEL: Final = "Qwen/Qwen3-ASR-1.7B"
 
 TTS_DEFAULT_VOICES: Final = {
     "zh-CN": "zh-CN-XiaoxiaoNeural",
