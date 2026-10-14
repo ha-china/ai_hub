@@ -125,3 +125,36 @@ class TestLegacyDiagnosticCleanup:
 
         entity_registry.async_remove.assert_not_called()
         device_registry.async_remove_device.assert_not_called()
+
+    @staticmethod
+    @pytest.mark.asyncio
+    async def test_falls_back_to_async_get_device_on_older_ha(monkeypatch):
+        entity_registry = MagicMock()
+        legacy_device = SimpleNamespace(id="device-1")
+        # SimpleNamespace has no async_get_device_by_identifier, like HA < 2026.8
+        device_registry = SimpleNamespace(
+            async_get_device=MagicMock(return_value=legacy_device),
+            async_remove_device=MagicMock(),
+        )
+
+        monkeypatch.setattr(
+            "custom_components.ai_hub.er",
+            SimpleNamespace(
+                async_get=lambda hass: entity_registry,
+                async_entries_for_config_entry=lambda registry, entry_id: [],
+            ),
+        )
+        monkeypatch.setattr(
+            "custom_components.ai_hub.dr",
+            SimpleNamespace(async_get=lambda hass: device_registry),
+        )
+
+        hass = SimpleNamespace()
+        entry = SimpleNamespace(entry_id="entry-1")
+
+        await _async_remove_legacy_diagnostic_entities(hass, entry)
+
+        device_registry.async_get_device.assert_called_once_with(
+            identifiers={(DOMAIN, "entry-1_diagnostic")}
+        )
+        device_registry.async_remove_device.assert_called_once_with("device-1")

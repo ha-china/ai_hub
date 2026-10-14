@@ -196,9 +196,13 @@ async def _async_remove_legacy_diagnostic_entities(
             entity_registry.async_remove(entity_entry.entity_id)
 
     device_registry = dr.async_get(hass)
-    legacy_device = device_registry.async_get_device_by_identifier(
-        (DOMAIN, f"{entry.entry_id}_diagnostic"), entry.entry_id
-    )
+    legacy_identifier = (DOMAIN, f"{entry.entry_id}_diagnostic")
+    # async_get_device_by_identifier requires HA 2026.8+; older cores only have async_get_device
+    get_by_identifier = getattr(device_registry, "async_get_device_by_identifier", None)
+    if get_by_identifier is not None:
+        legacy_device = get_by_identifier(legacy_identifier, entry.entry_id)
+    else:
+        legacy_device = device_registry.async_get_device(identifiers={legacy_identifier})
     if legacy_device is not None:
         device_registry.async_remove_device(legacy_device.id)
 
@@ -218,7 +222,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: AIHubConfigEntry) -> boo
     entry.runtime_data = api_key
 
     _ensure_initial_subentries(hass, entry, api_key)
-    await _async_remove_legacy_diagnostic_entities(hass, entry)
+    try:
+        await _async_remove_legacy_diagnostic_entities(hass, entry)
+    except Exception as err:
+        _LOGGER.warning("Legacy diagnostic cleanup failed (non-fatal): %s", err)
 
     # Each step is independent - one failure does not block others
     try:
