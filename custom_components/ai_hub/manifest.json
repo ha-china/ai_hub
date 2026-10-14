@@ -9,5 +9,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/ha-china/ai_hub/issues",
   "requirements": ["edge-tts==7.3.0", "aiohttp"],
-  "version": "2026.09.3"
+  "version": "2026.10.0"
 }
