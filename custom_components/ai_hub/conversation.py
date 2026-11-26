@@ -29,6 +29,33 @@ _LOGGER = logging.getLogger(__name__)
 MATCH_ALL: Literal["*"] = "*"
 
 
+def _is_speech_only_intent_script(
+    hass: HomeAssistant, response: intent.IntentResponse
+) -> bool:
+    """Identify registered YAML intent scripts that do not run actions."""
+    intent_type = getattr(getattr(response, "intent", None), "intent_type", None)
+    if not intent_type:
+        return False
+
+    # Intent Script moved its handler in newer Home Assistant releases.
+    try:
+        from homeassistant.components.intent_script.helpers import ScriptIntentHandler
+    except ImportError:
+        try:
+            from homeassistant.components.intent_script import ScriptIntentHandler
+        except ImportError:
+            return False
+
+    for handler in intent.async_get(hass):
+        if handler.intent_type == intent_type:
+            return (
+                type(handler) is ScriptIntentHandler
+                and "speech" in handler.config
+                and "action" not in handler.config
+            )
+    return False
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -182,6 +209,23 @@ class AIHubConversationAgent(
                 has_explicit_failure = bool(failed_results)
                 has_explicit_outcome = has_explicit_success or has_explicit_failure
                 continue_conversation = bool(getattr(ha_chat_log, "continue_conversation", False))
+                # Speech-only intent_script handlers return ACTION_DONE even
+                # though they execute no action and have no target outcomes.
+                if (
+                    response_type == intent.IntentResponseType.ACTION_DONE
+                    and not has_explicit_outcome
+                    and not has_error
+                    and not getattr(ha_response, "error_code", None)
+                    and isinstance(plain_speech, str)
+                    and plain_speech.strip()
+                    and not continue_conversation
+                    and not getattr(ha_response, "reprompt", None)
+                    and _is_speech_only_intent_script(self.hass, ha_response)
+                ):
+                    response_type = intent.IntentResponseType.QUERY_ANSWER
+                    ha_response.response_type = response_type
+                    _LOGGER.debug("Normalized speech-only intent_script as query answer")
+
                 is_empty_action_done = (
                     response_type == intent.IntentResponseType.ACTION_DONE
                     and not has_explicit_outcome
