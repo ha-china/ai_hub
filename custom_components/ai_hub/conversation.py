@@ -29,14 +29,8 @@ _LOGGER = logging.getLogger(__name__)
 MATCH_ALL: Literal["*"] = "*"
 
 
-def _is_speech_only_intent_script(
-    hass: HomeAssistant, response: intent.IntentResponse
-) -> bool:
-    """Identify registered YAML intent scripts that do not run actions."""
-    intent_type = getattr(getattr(response, "intent", None), "intent_type", None)
-    if not intent_type:
-        return False
-
+def _speech_only_intent_scripts(hass: HomeAssistant) -> dict[str, intent.IntentHandler]:
+    """Snapshot registered YAML intent scripts that do not run actions."""
     # Intent Script moved its handler in newer Home Assistant releases.
     try:
         from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -44,16 +38,26 @@ def _is_speech_only_intent_script(
         try:
             from homeassistant.components.intent_script import ScriptIntentHandler
         except ImportError:
-            return False
+            return {}
 
-    for handler in intent.async_get(hass):
-        if handler.intent_type == intent_type:
-            return (
-                type(handler) is ScriptIntentHandler
-                and "speech" in handler.config
-                and "action" not in handler.config
-            )
-    return False
+    return {
+        handler.intent_type: handler
+        for handler in intent.async_get(hass)
+        if type(handler) is ScriptIntentHandler
+        and "speech" in handler.config
+        and "action" not in handler.config
+    }
+
+
+def _is_unchanged_speech_only_intent_script(
+    hass: HomeAssistant,
+    response: intent.IntentResponse,
+    before: dict[str, intent.IntentHandler],
+) -> bool:
+    """Reject the special case if its handler changed during HA dispatch."""
+    intent_type = getattr(getattr(response, "intent", None), "intent_type", None)
+    handler = before.get(intent_type) if intent_type else None
+    return handler is not None and _speech_only_intent_scripts(hass).get(intent_type) is handler
 
 
 async def async_setup_entry(
@@ -178,6 +182,7 @@ class AIHubConversationAgent(
             ha_chat_log = replace(chat_log, content=chat_log.content.copy())
 
             _LOGGER.debug("调用 HA 内置 intents 处理: %s", user_input.text)
+            speech_only_before = _speech_only_intent_scripts(self.hass)
             ha_response = await ha_conversation.async_handle_intents(
                 self.hass,
                 user_input,
@@ -220,7 +225,9 @@ class AIHubConversationAgent(
                     and plain_speech.strip()
                     and not continue_conversation
                     and not getattr(ha_response, "reprompt", None)
-                    and _is_speech_only_intent_script(self.hass, ha_response)
+                    and _is_unchanged_speech_only_intent_script(
+                        self.hass, ha_response, speech_only_before
+                    )
                 ):
                     response_type = intent.IntentResponseType.QUERY_ANSWER
                     ha_response.response_type = response_type
